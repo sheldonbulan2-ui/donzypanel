@@ -290,6 +290,33 @@ app.delete('/api/admins/:id', authAdmin, requireSuperAdmin, async (req, res) => 
   }
 });
 
+// 5. Version check and alert feed for App Home Screen
+app.all(['/upload/check-version.php', '/check-version.php'], (req, res) => {
+  res.json({
+    status: 'success',
+    code: 200,
+    version: 'v56.32.2',
+    game_version: 'v56.32.2',
+    update_required: false,
+    message: 'Online'
+  });
+});
+
+app.all(['/upload/alert-feed.php', '/alert-feed.php'], (req, res) => {
+  res.json([]);
+});
+
+app.all(['/upload/social-info.php', '/social-info.php'], (req, res) => {
+  res.json({
+    telegram: 'https://t.me/donzy',
+    channel: 'https://t.me/donzy'
+  });
+});
+
+app.all(['/upload/reseller-list.php', '/reseller-list.php'], (req, res) => {
+  res.json([]);
+});
+
 // SPA Catch-all
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
