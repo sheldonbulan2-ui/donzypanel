@@ -83,45 +83,61 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-// 2. Client Authentication Validation Endpoint
-app.post('/api/validate', async (req, res) => {
-  const { username, password } = req.body;
+// 2. Client Authentication Validation Handler (supports /api/validate and /upload/login-access.php)
+const handleClientValidate = async (req, res) => {
+  const username = req.body.username || req.body['username-activation'];
+  const password = req.body.password || req.body['password-activation'];
+  const deviceId = req.body.deviceId || req.body['user-device-id'];
+
   if (!username || !password) {
-    return res.status(400).json({ valid: false, message: 'Username and password required.' });
+    return res.status(400).json({ valid: false, status: 'error', message: 'Username and password required.' });
   }
 
   try {
     const [rows] = await pool.query('SELECT * FROM panel_users WHERE username = ?', [username]);
     if (rows.length === 0) {
-      return res.status(401).json({ valid: false, message: 'Account not found or unauthorized.' });
+      return res.status(401).json({ valid: false, status: 'error', message: 'Account not found or unauthorized.' });
     }
 
     const user = rows[0];
     if (user.status !== 'active') {
-      return res.status(403).json({ valid: false, message: `Account is ${user.status}.` });
+      return res.status(403).json({ valid: false, status: user.status, message: `Account is ${user.status}.` });
     }
 
     if (user.expires_at && new Date(user.expires_at) < new Date()) {
-      return res.status(403).json({ valid: false, message: 'Account has expired.' });
+      return res.status(403).json({ valid: false, status: 'expired', message: 'Account has expired.' });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.status(401).json({ valid: false, message: 'Invalid credentials.' });
+      return res.status(401).json({ valid: false, status: 'error', message: 'Invalid credentials.' });
     }
+
+    const remainingSeconds = user.expires_at 
+      ? Math.max(0, Math.floor((new Date(user.expires_at).getTime() - Date.now()) / 1000))
+      : 2592000;
 
     res.json({
       valid: true,
+      status: 'enable',
+      result: 9,
       message: 'Access granted',
-      status: user.status,
-      expires_at: user.expires_at
+      user: {
+        username: user.username,
+        status: user.status,
+        expires_at: user.expires_at
+      },
+      remaining_seconds: remainingSeconds
     });
   } catch (err) {
-    res.status(500).json({ valid: false, message: 'Verification error' });
+    res.status(500).json({ valid: false, status: 'error', message: 'Verification error: ' + err.message });
   }
-});
+};
 
-// 3. User Management (Admins & Super Admins)
+app.post('/api/validate', handleClientValidate);
+app.post('/upload/login-access.php', handleClientValidate);
+
+// 3. User & License Management
 app.get('/api/users', authAdmin, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT id, username, status, created_by, expires_at, created_at FROM panel_users ORDER BY id DESC');
@@ -140,9 +156,9 @@ app.post('/api/users', authAdmin, async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
     let expiresAt = null;
-    if (expires_days && parseInt(expires_days) > 0) {
+    if (expires_days && parseInt(expires_days, 10) > 0) {
       const d = new Date();
-      d.setDate(d.getDate() + parseInt(expires_days));
+      d.setDate(d.getDate() + parseInt(expires_days, 10));
       expiresAt = d.toISOString().slice(0, 19).replace('T', ' ');
     }
 
@@ -178,6 +194,25 @@ app.patch('/api/users/:id/status', authAdmin, async (req, res) => {
   try {
     await pool.query('UPDATE panel_users SET status = ? WHERE id = ?', [status, req.params.id]);
     res.json({ message: `Status updated to ${status}.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/users/:id/extend', authAdmin, async (req, res) => {
+  const { days } = req.body;
+  const daysToAdd = parseInt(days || '30', 10);
+  try {
+    const [rows] = await pool.query('SELECT expires_at FROM panel_users WHERE id = ?', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    let currentExpiry = rows[0].expires_at ? new Date(rows[0].expires_at) : new Date();
+    if (currentExpiry < new Date()) currentExpiry = new Date();
+    currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
+
+    const newExpiryStr = currentExpiry.toISOString().slice(0, 19).replace('T', ' ');
+    await pool.query('UPDATE panel_users SET expires_at = ?, status = "active" WHERE id = ?', [newExpiryStr, req.params.id]);
+    res.json({ message: `License extended by ${daysToAdd} days.`, expires_at: newExpiryStr });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

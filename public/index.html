@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Donzy Admin Portal</title>
+  <title>Donzy Engine - Admin Management Portal</title>
   <style>
     :root {
       --bg: #0b0f19;
       --card: #151c2c;
+      --card-hover: #1a2337;
       --border: #232d42;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --stitch-blue: #38bdf8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --stitch-cyan: #38bdf8;
       --stitch-pink: #f472b6;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --danger: #ef4444;
       --success: #10b981;
+      --warning: #f59e0b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -37,7 +39,22 @@
       gap: 0.75rem;
       font-size: 1.25rem;
       font-weight: 700;
-      color: var(--stitch-blue);
+      color: var(--stitch-cyan);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #38bdf8, #f472b6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b0f19;
+      font-weight: bold;
+      font-size: 1.1rem;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
     }
 
     .badge {
@@ -47,10 +64,29 @@
       font-weight: 600;
       text-transform: uppercase;
     }
-    .badge-super { background: rgba(244, 114, 182, 0.2); color: var(--stitch-pink); border: 1px solid var(--stitch-pink); }
-    .badge-admin { background: rgba(56, 189, 248, 0.2); color: var(--stitch-blue); border: 1px solid var(--stitch-blue); }
+    .badge-super { background: rgba(244, 114, 182, 0.15); color: var(--stitch-pink); border: 1px solid var(--stitch-pink); }
+    .badge-admin { background: rgba(56, 189, 248, 0.15); color: var(--stitch-cyan); border: 1px solid var(--stitch-cyan); }
 
     .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; width: 100%; flex: 1; }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .stat-num { font-size: 1.8rem; font-weight: 700; color: var(--stitch-cyan); }
+    .stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
     .card {
       background: var(--card);
@@ -61,7 +97,15 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
-    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--stitch-cyan);
+    }
 
     .form-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
@@ -74,31 +118,45 @@
       border-radius: 0.375rem;
       font-size: 0.95rem;
     }
-    input:focus, select:focus { outline: none; border-color: var(--stitch-blue); }
+    input:focus, select:focus { outline: none; border-color: var(--stitch-cyan); }
 
     .btn {
-      background: var(--primary);
-      color: white;
+      background: linear-gradient(135deg, var(--stitch-cyan), #60a5fa);
+      color: #0b0f19;
       border: none;
       padding: 0.65rem 1.2rem;
       border-radius: 0.375rem;
       cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s;
+      font-weight: 700;
+      transition: opacity 0.2s;
     }
-    .btn:hover { background: var(--primary-hover); }
-    .btn-danger { background: var(--danger); }
+    .btn:hover { opacity: 0.9; }
+    .btn-pink { background: linear-gradient(135deg, var(--stitch-pink), #ec4899); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
     .btn-danger:hover { background: #dc2626; }
     .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
-    .btn-secondary { background: #334155; }
-    .btn-secondary:hover { background: #475569; }
+    .btn-secondary { background: #1e293b; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #334155; }
+
+    .presets { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+    .preset-btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--stitch-cyan);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .preset-btn:hover { background: #334155; }
 
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
     th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+    th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .status-active { color: var(--success); font-weight: 600; }
     .status-suspended { color: var(--danger); font-weight: 600; }
+    .status-expired { color: var(--warning); font-weight: 600; }
 
     /* Auth screen */
     #auth-screen { max-width: 400px; margin: 5rem auto; }
@@ -109,7 +167,8 @@
   <!-- HEADER -->
   <header class="header" id="app-header" style="display: none;">
     <div class="brand">
-      <span>💙 Donzy Portal</span>
+      <div class="brand-logo">8</div>
+      <span>Donzy Engine Portal</span>
       <span class="badge" id="role-badge">Admin</span>
     </div>
     <div>
@@ -121,24 +180,48 @@
   <!-- LOGIN SCREEN -->
   <div id="auth-screen">
     <div class="card">
-      <h2 style="margin-bottom: 1rem; text-align: center; color: var(--stitch-blue);">Admin Authentication</h2>
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <div class="brand-logo" style="margin: 0 auto 0.75rem auto; width: 48px; height: 48px; font-size: 1.5rem;">8</div>
+        <h2 style="color: var(--stitch-cyan);">Donzy Engine</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Admin &amp; License Validation Portal</p>
+      </div>
       <div id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 0.75rem; display: none;"></div>
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Username</label>
+          <label>Admin Username</label>
           <input type="text" id="login-username" required placeholder="superadmin">
         </div>
         <div class="form-group">
           <label>Password</label>
           <input type="password" id="login-password" required placeholder="••••••••">
         </div>
-        <button class="btn" style="width: 100%;" type="submit">Log In</button>
+        <button class="btn" style="width: 100%;" type="submit">Sign In to Dashboard</button>
       </form>
     </div>
   </div>
 
   <!-- MAIN DASHBOARD -->
   <main class="container" id="dashboard-screen" style="display: none;">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-total">0</span>
+        <span class="stat-label">Total Users</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-active" style="color: var(--success);">0</span>
+        <span class="stat-label">Active Licenses</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-suspended" style="color: var(--danger);">0</span>
+        <span class="stat-label">Suspended</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-expired" style="color: var(--warning);">0</span>
+        <span class="stat-label">Expired</span>
+      </div>
+    </div>
 
     <!-- SUPER ADMIN ONLY: SUB-ADMINS -->
     <section class="card" id="super-admin-section" style="display: none;">
@@ -181,23 +264,30 @@
     <!-- CLIENT USER / LICENSE MANAGEMENT -->
     <section class="card">
       <div class="card-title">
-        <span>👤 Authorized Users (Validation Control)</span>
+        <span>👤 Client User Licenses (App Authentication)</span>
       </div>
 
-      <form onsubmit="handleCreateUser(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end;">
+      <form onsubmit="handleCreateUser(event)" style="display: grid; grid-template-columns: 1fr 1fr 1.2fr auto; gap: 0.75rem; align-items: end;">
         <div>
-          <label>Username</label>
-          <input type="text" id="new-user-name" required placeholder="client_user">
+          <label>Username (Activation Key)</label>
+          <input type="text" id="new-user-name" required placeholder="e.g. nonoph">
         </div>
         <div>
           <label>Password</label>
           <input type="password" id="new-user-pass" required placeholder="••••••••">
         </div>
         <div>
-          <label>Expiry (Days, 0 for infinite)</label>
+          <label>Expiry (Days, 0 = Lifetime)</label>
           <input type="number" id="new-user-days" value="30">
+          <div class="presets">
+            <button type="button" class="preset-btn" onclick="setDays(1)">1D</button>
+            <button type="button" class="preset-btn" onclick="setDays(7)">7D</button>
+            <button type="button" class="preset-btn" onclick="setDays(30)">30D</button>
+            <button type="button" class="preset-btn" onclick="setDays(60)">60D</button>
+            <button type="button" class="preset-btn" onclick="setDays(0)">Lifetime</button>
+          </div>
         </div>
-        <button class="btn btn-sm" type="submit" style="height: 38px;">Grant Access</button>
+        <button class="btn btn-sm" type="submit" style="height: 38px;">Create License</button>
       </form>
 
       <table>
@@ -206,7 +296,8 @@
             <th>ID</th>
             <th>Username</th>
             <th>Status</th>
-            <th>Expires</th>
+            <th>Remaining Days</th>
+            <th>Expires On</th>
             <th>Created By</th>
             <th>Actions</th>
           </tr>
@@ -219,6 +310,10 @@
   <script>
     let token = localStorage.getItem('donzy_token');
     let currentUser = JSON.parse(localStorage.getItem('donzy_user') || 'null');
+
+    function setDays(d) {
+      document.getElementById('new-user-days').value = d;
+    }
 
     function checkAuth() {
       if (token && currentUser) {
@@ -282,28 +377,60 @@
       checkAuth();
     }
 
+    function getRemainingDays(expiresAt) {
+      if (!expiresAt) return '<span style="color:var(--stitch-cyan);">Lifetime</span>';
+      const diff = new Date(expiresAt) - new Date();
+      if (diff <= 0) return '<span style="color:var(--danger);">Expired</span>';
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      return `<strong>${days}</strong> days left`;
+    }
+
     async function loadUsers() {
       try {
         const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
         if (res.status === 401 || res.status === 403) return logout();
         const users = await res.json();
 
+        let activeCount = 0;
+        let suspendedCount = 0;
+        let expiredCount = 0;
+
         const tbody = document.getElementById('users-table-body');
-        tbody.innerHTML = users.map(u => `
-          <tr>
-            <td>#${u.id}</td>
-            <td><strong>${u.username}</strong></td>
-            <td><span class="status-${u.status}">${u.status.toUpperCase()}</span></td>
-            <td>${u.expires_at ? new Date(u.expires_at).toLocaleDateString() : 'Never'}</td>
-            <td>${u.created_by}</td>
-            <td>
-              <button class="btn btn-sm btn-secondary" onclick="toggleStatus(${u.id}, '${u.status}')">
-                ${u.status === 'active' ? 'Suspend' : 'Activate'}
-              </button>
-              <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = users.map(u => {
+          const isExpired = u.expires_at && new Date(u.expires_at) < new Date();
+          let displayStatus = u.status;
+          if (u.status === 'active' && isExpired) {
+            displayStatus = 'expired';
+            expiredCount++;
+          } else if (u.status === 'active') {
+            activeCount++;
+          } else {
+            suspendedCount++;
+          }
+
+          return `
+            <tr>
+              <td>#${u.id}</td>
+              <td><strong>${u.username}</strong></td>
+              <td><span class="status-${displayStatus}">${displayStatus.toUpperCase()}</span></td>
+              <td>${getRemainingDays(u.expires_at)}</td>
+              <td>${u.expires_at ? new Date(u.expires_at).toLocaleDateString() : 'Never'}</td>
+              <td>${u.created_by}</td>
+              <td style="display:flex; gap:0.4rem; align-items:center;">
+                <button class="btn btn-sm btn-secondary" onclick="toggleStatus(${u.id}, '${u.status}')">
+                  ${u.status === 'active' ? 'Suspend' : 'Activate'}
+                </button>
+                <button class="btn btn-sm btn-pink" onclick="extendLicense(${u.id}, 30)">+30d</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('stat-total').innerText = users.length;
+        document.getElementById('stat-active').innerText = activeCount;
+        document.getElementById('stat-suspended').innerText = suspendedCount;
+        document.getElementById('stat-expired').innerText = expiredCount;
       } catch (e) { console.error(e); }
     }
 
@@ -328,7 +455,7 @@
 
     async function handleCreateUser(e) {
       e.preventDefault();
-      const username = document.getElementById('new-user-name').value;
+      const username = document.getElementById('new-user-name').value.trim();
       const password = document.getElementById('new-user-pass').value;
       const expires_days = document.getElementById('new-user-days').value;
 
@@ -338,16 +465,26 @@
         body: JSON.stringify({ username, password, expires_days })
       });
       const data = await res.json();
-      if (!res.ok) alert(data.error);
+      if (!res.ok) alert(data.error || 'Failed to create user');
       else {
         e.target.reset();
+        document.getElementById('new-user-days').value = '30';
         loadUsers();
       }
     }
 
+    async function extendLicense(id, days) {
+      await fetch(`/api/users/${id}/extend`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ days })
+      });
+      loadUsers();
+    }
+
     async function handleCreateAdmin(e) {
       e.preventDefault();
-      const username = document.getElementById('new-admin-user').value;
+      const username = document.getElementById('new-admin-user').value.trim();
       const password = document.getElementById('new-admin-pass').value;
       const role = document.getElementById('new-admin-role').value;
 
