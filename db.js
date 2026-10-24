@@ -97,6 +97,10 @@ async function initDB() {
       await conn.query(`ALTER TABLE app_settings ADD COLUMN target_pool_version VARCHAR(50) DEFAULT '55.6.0'`);
     } catch (ignoreCol) {}
 
+    try {
+      await conn.query(`UPDATE app_settings SET apk_url = 'https://donzypanel.onrender.com/Donzy_v1.0.apk' WHERE id = 1 AND (apk_url IS NULL OR apk_url = '')`);
+    } catch (ignoreUrl) {}
+
     // 5. Seed default App Settings (Row 1)
     const [settingsRows] = await conn.query('SELECT id FROM app_settings WHERE id = 1');
     if (settingsRows.length === 0) {

@@ -87,7 +87,7 @@ async function getAppSettings() {
   return {
     app_version: 'v1.0',
     force_update: 0,
-    apk_url: '',
+    apk_url: 'https://donzypanel.onrender.com/Donzy_v1.0.apk',
     telegram_url: 'https://t.me/Sheldonph',
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
