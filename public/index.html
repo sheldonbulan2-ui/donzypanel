@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Donzy Engine - Admin Management Portal</title>
+  <title>Donzy - Admin &amp; Reseller Management Dashboard</title>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card: #151c2c;
-      --card-hover: #1a2337;
-      --border: #232d42;
+      --bg: #0b1120;
+      --card: #0f172a;
+      --card-inner: #1e293b;
+      --border: #334155;
       --primary: #38bdf8;
       --primary-hover: #0284c7;
-      --stitch-cyan: #38bdf8;
-      --stitch-pink: #f472b6;
+      --gold: #ffd700;
+      --gold-dark: #d4af37;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --danger: #ef4444;
@@ -24,6 +24,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
+    /* HEADER */
     .header {
       background: var(--card);
       border-bottom: 1px solid var(--border);
@@ -31,6 +32,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .brand {
@@ -39,35 +43,64 @@
       gap: 0.75rem;
       font-size: 1.25rem;
       font-weight: 700;
-      color: var(--stitch-cyan);
+      color: var(--gold);
       letter-spacing: 0.5px;
     }
 
     .brand-logo {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: radial-gradient(circle, #38bdf8, #f472b6);
+      background: radial-gradient(circle, #ffd700, #b8860b);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #0b0f19;
-      font-weight: bold;
-      font-size: 1.1rem;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+      color: #0b1120;
+      font-weight: 900;
+      font-size: 1.2rem;
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.4);
     }
 
     .badge {
       font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.6rem;
       border-radius: 9999px;
       font-weight: 600;
       text-transform: uppercase;
     }
-    .badge-super { background: rgba(244, 114, 182, 0.15); color: var(--stitch-pink); border: 1px solid var(--stitch-pink); }
-    .badge-admin { background: rgba(56, 189, 248, 0.15); color: var(--stitch-cyan); border: 1px solid var(--stitch-cyan); }
+    .badge-super { background: rgba(255, 215, 0, 0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-admin { background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid var(--primary); }
+    .badge-reseller { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid var(--success); }
 
-    .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; width: 100%; flex: 1; }
+    /* NAV TABS */
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 2rem 0;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; width: 100%; flex: 1; }
 
     /* STATS GRID */
     .stats-grid {
@@ -84,9 +117,23 @@
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
+      position: relative;
+      overflow: hidden;
     }
-    .stat-num { font-size: 1.8rem; font-weight: 700; color: var(--stitch-cyan); }
-    .stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--border);
+    }
+    .stat-card.gold::before { background: var(--gold); }
+    .stat-card.blue::before { background: var(--primary); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.red::before { background: var(--danger); }
+    .stat-card.yellow::before { background: var(--warning); }
+
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
     .card {
       background: var(--card);
@@ -94,72 +141,106 @@
       border-radius: 0.75rem;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
     }
 
     .card-title {
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 700;
       margin-bottom: 1.25rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: var(--stitch-cyan);
+      color: var(--gold);
     }
 
     .form-group { margin-bottom: 1rem; }
-    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-    input, select {
+    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 500; }
+    input, select, textarea {
       width: 100%;
-      background: #0b0f19;
+      background: #060b17;
       border: 1px solid var(--border);
       color: var(--text);
       padding: 0.65rem 0.75rem;
       border-radius: 0.375rem;
       font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
     }
-    input:focus, select:focus { outline: none; border-color: var(--stitch-cyan); }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); }
 
     .btn {
-      background: linear-gradient(135deg, var(--stitch-cyan), #60a5fa);
-      color: #0b0f19;
+      background: linear-gradient(135deg, #ffd700, #b8860b);
+      color: #0b1120;
       border: none;
-      padding: 0.65rem 1.2rem;
+      padding: 0.65rem 1.25rem;
       border-radius: 0.375rem;
-      cursor: pointer;
       font-weight: 700;
-      transition: opacity 0.2s;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.1s, opacity 0.2s;
     }
-    .btn:hover { opacity: 0.9; }
-    .btn-pink { background: linear-gradient(135deg, var(--stitch-pink), #ec4899); color: white; }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-danger:hover { background: #dc2626; }
-    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
-    .btn-secondary { background: #1e293b; color: var(--text); border: 1px solid var(--border); }
+    .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--card-inner);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
     .btn-secondary:hover { background: #334155; }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .btn-danger:hover { background: var(--danger); color: white; }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
 
-    .presets { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+    .presets { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
     .preset-btn {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
       background: #1e293b;
       border: 1px solid var(--border);
-      color: var(--stitch-cyan);
-      border-radius: 4px;
+      color: var(--text-muted);
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
       cursor: pointer;
     }
-    .preset-btn:hover { background: #334155; }
+    .preset-btn:hover { background: #334155; color: var(--gold); }
 
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
     th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
     th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .status-active { color: var(--success); font-weight: 600; }
-    .status-suspended { color: var(--danger); font-weight: 600; }
+    .status-suspended, .status-banned { color: var(--danger); font-weight: 600; }
     .status-expired { color: var(--warning); font-weight: 600; }
+    .status-unused { color: var(--primary); font-weight: 600; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      width: 100%;
+      max-width: 450px;
+      padding: 1.5rem;
+    }
 
     /* Auth screen */
-    #auth-screen { max-width: 400px; margin: 5rem auto; }
+    #auth-screen { max-width: 420px; margin: 5rem auto; width: 100%; padding: 0 1rem; }
   </style>
 </head>
 <body>
@@ -167,35 +248,46 @@
   <!-- HEADER -->
   <header class="header" id="app-header" style="display: none;">
     <div class="brand">
-      <div class="brand-logo">8</div>
-      <span>Donzy Engine Portal</span>
+      <div class="brand-logo">D</div>
+      <span>Donzy Management</span>
       <span class="badge" id="role-badge">Admin</span>
     </div>
-    <div>
-      <span id="admin-user-display" style="margin-right: 1rem; font-size: 0.9rem; color: var(--text-muted);"></span>
+    <div style="display: flex; align-items: center; gap: 1.25rem;">
+      <div id="credits-chip" style="display: none; background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.85rem; color: var(--gold); font-weight: bold;">
+        🪙 Credits: <span id="current-credits-val">0.00</span>
+      </div>
+      <span id="admin-user-display" style="font-size: 0.9rem; color: var(--text-muted);"></span>
       <button class="btn btn-secondary btn-sm" onclick="logout()">Sign Out</button>
     </div>
   </header>
 
+  <!-- NAV TABS -->
+  <nav class="nav-tabs" id="app-nav" style="display: none;">
+    <div class="nav-tab active" onclick="switchTab('tab-users')">👤 User Licenses</div>
+    <div class="nav-tab" id="nav-staff" onclick="switchTab('tab-staff')">🤝 Authorized Resellers</div>
+    <div class="nav-tab" id="nav-settings" onclick="switchTab('tab-settings')">⚙️ App Settings &amp; Kill-Switch</div>
+    <div class="nav-tab" onclick="switchTab('tab-announcements')">📢 Broadcasts</div>
+  </nav>
+
   <!-- LOGIN SCREEN -->
   <div id="auth-screen">
     <div class="card">
-      <div style="text-align: center; margin-bottom: 1.25rem;">
-        <div class="brand-logo" style="margin: 0 auto 0.75rem auto; width: 48px; height: 48px; font-size: 1.5rem;">8</div>
-        <h2 style="color: var(--stitch-cyan);">Donzy Engine</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Admin &amp; License Validation Portal</p>
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-logo" style="margin: 0 auto 0.75rem auto; width: 54px; height: 54px; font-size: 1.8rem;">D</div>
+        <h2 style="color: var(--gold);">Donzy</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">Admin, Staff &amp; Reseller Portal</p>
       </div>
       <div id="login-error" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 0.75rem; display: none;"></div>
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Admin Username</label>
-          <input type="text" id="login-username" required placeholder="superadmin">
+          <label>Username</label>
+          <input type="text" id="login-username" required placeholder="superadmin / reseller">
         </div>
         <div class="form-group">
           <label>Password</label>
           <input type="password" id="login-password" required placeholder="••••••••">
         </div>
-        <button class="btn" style="width: 100%;" type="submit">Sign In to Dashboard</button>
+        <button class="btn" style="width: 100%; margin-top: 0.5rem;" type="submit">Sign In</button>
       </form>
     </div>
   </div>
@@ -205,111 +297,310 @@
 
     <!-- STATS -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card blue">
         <span class="stat-num" id="stat-total">0</span>
-        <span class="stat-label">Total Users</span>
+        <span class="stat-label">Total Licenses</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card green">
         <span class="stat-num" id="stat-active" style="color: var(--success);">0</span>
         <span class="stat-label">Active Licenses</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-num" id="stat-suspended" style="color: var(--danger);">0</span>
-        <span class="stat-label">Suspended</span>
-      </div>
-      <div class="stat-card">
+      <div class="stat-card yellow">
         <span class="stat-num" id="stat-expired" style="color: var(--warning);">0</span>
         <span class="stat-label">Expired</span>
       </div>
+      <div class="stat-card red">
+        <span class="stat-num" id="stat-banned" style="color: var(--danger);">0</span>
+        <span class="stat-label">Banned</span>
+      </div>
     </div>
 
-    <!-- SUPER ADMIN ONLY: SUB-ADMINS -->
-    <section class="card" id="super-admin-section" style="display: none;">
-      <div class="card-title">
-        <span>👑 Sub-Admin Accounts Management</span>
-      </div>
-      <form onsubmit="handleCreateAdmin(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end;">
-        <div>
-          <label>New Admin Username</label>
-          <input type="text" id="new-admin-user" required placeholder="admin_user">
+    <!-- TAB 1: USERS / LICENSES -->
+    <div id="tab-users" class="tab-pane">
+      <section class="card">
+        <div class="card-title">
+          <span>➕ Create New License Key</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(Cost: 10 Credits for Resellers)</span>
         </div>
-        <div>
-          <label>Password</label>
-          <input type="password" id="new-admin-pass" required placeholder="••••••••">
+
+        <form onsubmit="handleCreateUser(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end;">
+          <div>
+            <label>License Key / Username</label>
+            <input type="text" id="new-user-name" required placeholder="e.g. donzy_user">
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="text" id="new-user-pass" required placeholder="password123">
+          </div>
+          <div>
+            <label>Duration (Days)</label>
+            <input type="number" id="new-user-days" value="30">
+            <div class="presets">
+              <button type="button" class="preset-btn" onclick="setDays(1)">1D</button>
+              <button type="button" class="preset-btn" onclick="setDays(7)">7D</button>
+              <button type="button" class="preset-btn" onclick="setDays(30)">30D</button>
+              <button type="button" class="preset-btn" onclick="setDays(60)">60D</button>
+              <button type="button" class="preset-btn" onclick="setDays(0)">∞ Life</button>
+            </div>
+          </div>
+          <div>
+            <label>Max Profiles (Accounts)</label>
+            <select id="new-user-profiles">
+              <option value="1">1 Account</option>
+              <option value="3">3 Accounts</option>
+              <option value="5" selected>5 Accounts (Standard)</option>
+              <option value="10">10 Accounts (VIP)</option>
+            </select>
+          </div>
+          <button class="btn" type="submit" style="height: 38px;">Generate Key</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <span>📋 Active Client Licenses</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Refresh</button>
         </div>
-        <div>
-          <label>Role</label>
-          <select id="new-admin-role">
-            <option value="admin">Standard Admin</option>
-            <option value="super_admin">Super Admin</option>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Key / User</th>
+                <th>Plain Pass</th>
+                <th>Status</th>
+                <th>Remaining</th>
+                <th>Profiles</th>
+                <th>HWID Bound</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: RESELLERS & STAFF -->
+    <div id="tab-staff" class="tab-pane" style="display: none;">
+      <section class="card">
+        <div class="card-title">
+          <span>➕ Add Authorized Reseller or Admin</span>
+        </div>
+        <form onsubmit="handleCreateStaff(event)" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end;">
+          <div>
+            <label>Username</label>
+            <input type="text" id="staff-user" required placeholder="reseller_john">
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="password" id="staff-pass" required placeholder="••••••••">
+          </div>
+          <div>
+            <label>Role</label>
+            <select id="staff-role">
+              <option value="reseller" selected>Reseller</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label>Telegram / Contact URL</label>
+            <input type="text" id="staff-contact" placeholder="https://t.me/username">
+          </div>
+          <div>
+            <label>Initial Credits</label>
+            <input type="number" id="staff-credits" value="500">
+          </div>
+          <button class="btn" type="submit" style="height: 38px;">Add Staff</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <span>🤝 Resellers Directory (App Store &amp; Verification)</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadStaff()">🔄 Refresh</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Credits Balance</th>
+                <th>Contact Link</th>
+                <th>Store Visible</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staff-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: APP CONFIG & KILL SWITCH -->
+    <div id="tab-settings" class="tab-pane" style="display: none;">
+      <section class="card">
+        <div class="card-title">
+          <span>⚙️ Global App Configuration &amp; Version Control</span>
+        </div>
+        <form onsubmit="handleSaveSettings(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="form-group">
+            <label>App Current Version</label>
+            <input type="text" id="cfg-app-version" placeholder="v1.0">
+          </div>
+          <div class="form-group">
+            <label>Force Update Toggle</label>
+            <select id="cfg-force-update">
+              <option value="0">Optional Update (0)</option>
+              <option value="1">Mandatory Force Update (1)</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label>APK Direct Download URL</label>
+            <input type="text" id="cfg-apk-url" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Telegram Official Channel URL</label>
+            <input type="text" id="cfg-telegram-url" placeholder="https://t.me/Sheldonph">
+          </div>
+          <div class="form-group">
+            <label>Technical Support URL</label>
+            <input type="text" id="cfg-support-url" placeholder="https://t.me/Sheldonph">
+          </div>
+          <div class="form-group">
+            <label>Game Status (Status Badge)</label>
+            <input type="text" id="cfg-game-status" placeholder="ONLINE">
+          </div>
+          <div class="form-group">
+            <label>Supported 8 Ball Pool Version Text</label>
+            <input type="text" id="cfg-supported-version" placeholder="8 Ball Pool v55.8.0+">
+          </div>
+          <div class="form-group">
+            <label>Mod Ready Status Text</label>
+            <input type="text" id="cfg-ready-status" placeholder="Mod Ready">
+          </div>
+
+          <!-- KILL SWITCH SECTION -->
+          <div style="grid-column: span 2; border: 1px solid var(--danger); background: rgba(239, 68, 68, 0.05); border-radius: 0.5rem; padding: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="color: var(--danger); font-weight: 700; font-size: 1.05rem;">🚨 Global Emergency Kill-Switch</span>
+              <select id="cfg-kill-switch" style="width: auto; background: #060b17; border-color: var(--danger); color: var(--danger); font-weight: bold;">
+                <option value="0">🟢 Disabled (App Access Normal)</option>
+                <option value="1">🔴 ACTIVE (Lock All App Access)</option>
+              </select>
+            </div>
+            <label>Emergency Maintenance Message (Shown to users):</label>
+            <textarea id="cfg-kill-msg" rows="2" placeholder="Server is undergoing emergency maintenance. Please try again later."></textarea>
+          </div>
+
+          <div style="grid-column: span 2; text-align: right;">
+            <button class="btn" type="submit">💾 Save App Configuration</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- TAB 4: BROADCASTS & ANNOUNCEMENTS -->
+    <div id="tab-announcements" class="tab-pane" style="display: none;">
+      <section class="card">
+        <div class="card-title">
+          <span>📢 Create In-App Broadcast Announcement</span>
+        </div>
+        <form onsubmit="handleCreateAnnouncement(event)" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end;">
+          <div>
+            <label>Title</label>
+            <input type="text" id="ann-title" required placeholder="New Update v1.0 Available!">
+          </div>
+          <div>
+            <label>Badge Type</label>
+            <select id="ann-badge">
+              <option value="UPDATE">UPDATE</option>
+              <option value="INFO">INFO</option>
+              <option value="MAINTENANCE">MAINTENANCE</option>
+            </select>
+          </div>
+          <button class="btn" type="submit" style="height: 38px;">Post Broadcast</button>
+          <div style="grid-column: span 3;">
+            <label>Content</label>
+            <textarea id="ann-content" required rows="2" placeholder="Write announcement details here..."></textarea>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <span>📢 Broadcasts Feed</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadAnnouncements()">🔄 Refresh</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Badge</th>
+                <th>Title</th>
+                <th>Content</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="announcements-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- CREDIT MODAL -->
+  <div id="credit-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal">
+      <h3 style="color: var(--gold); margin-bottom: 1rem;">🪙 Adjust Reseller Credits</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Reseller: <strong id="modal-staff-name" style="color: var(--text);"></strong><br>
+        Current Balance: <strong id="modal-current-bal" style="color: var(--gold);"></strong>
+      </p>
+      <form onsubmit="submitCreditAdjustment(event)">
+        <input type="hidden" id="modal-staff-id">
+        <div class="form-group">
+          <label>Action</label>
+          <select id="modal-action">
+            <option value="add">➕ Add Credits</option>
+            <option value="subtract">➖ Deduct Credits</option>
           </select>
         </div>
-        <button class="btn btn-sm" type="submit" style="height: 38px;">Add Admin</button>
+        <div class="form-group">
+          <label>Amount</label>
+          <input type="number" step="0.01" id="modal-amount" required placeholder="e.g. 500">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeCreditModal()">Cancel</button>
+          <button type="submit" class="btn">Confirm Transaction</button>
+        </div>
       </form>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Created</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="admins-table-body"></tbody>
-      </table>
-    </section>
-
-    <!-- CLIENT USER / LICENSE MANAGEMENT -->
-    <section class="card">
-      <div class="card-title">
-        <span>👤 Client User Licenses (App Authentication)</span>
-      </div>
-
-      <form onsubmit="handleCreateUser(event)" style="display: grid; grid-template-columns: 1fr 1fr 1.2fr auto; gap: 0.75rem; align-items: end;">
-        <div>
-          <label>Username (Activation Key)</label>
-          <input type="text" id="new-user-name" required placeholder="e.g. nonoph">
-        </div>
-        <div>
-          <label>Password</label>
-          <input type="password" id="new-user-pass" required placeholder="••••••••">
-        </div>
-        <div>
-          <label>Expiry (Days, 0 = Lifetime)</label>
-          <input type="number" id="new-user-days" value="30">
-          <div class="presets">
-            <button type="button" class="preset-btn" onclick="setDays(1)">1D</button>
-            <button type="button" class="preset-btn" onclick="setDays(7)">7D</button>
-            <button type="button" class="preset-btn" onclick="setDays(30)">30D</button>
-            <button type="button" class="preset-btn" onclick="setDays(60)">60D</button>
-            <button type="button" class="preset-btn" onclick="setDays(0)">Lifetime</button>
-          </div>
-        </div>
-        <button class="btn btn-sm" type="submit" style="height: 38px;">Create License</button>
-      </form>
-
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Status</th>
-            <th>Remaining Days</th>
-            <th>Expires On</th>
-            <th>Created By</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-table-body"></tbody>
-      </table>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script>
     let token = localStorage.getItem('donzy_token');
     let currentUser = JSON.parse(localStorage.getItem('donzy_user') || 'null');
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).style.display = 'block';
+
+      event.currentTarget.classList.add('active');
+
+      if (tabId === 'tab-users') loadUsers();
+      if (tabId === 'tab-staff') loadStaff();
+      if (tabId === 'tab-settings') loadSettings();
+      if (tabId === 'tab-announcements') loadAnnouncements();
+    }
 
     function setDays(d) {
       document.getElementById('new-user-days').value = d;
@@ -319,24 +610,33 @@
       if (token && currentUser) {
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app-header').style.display = 'flex';
+        document.getElementById('app-nav').style.display = 'flex';
         document.getElementById('dashboard-screen').style.display = 'block';
         document.getElementById('admin-user-display').innerText = currentUser.username;
 
         const badge = document.getElementById('role-badge');
         badge.innerText = currentUser.role.replace('_', ' ');
-        badge.className = 'badge ' + (currentUser.role === 'super_admin' ? 'badge-super' : 'badge-admin');
+        badge.className = 'badge ' + (
+          currentUser.role === 'super_admin' ? 'badge-super' :
+          (currentUser.role === 'admin' ? 'badge-admin' : 'badge-reseller')
+        );
 
-        if (currentUser.role === 'super_admin') {
-          document.getElementById('super-admin-section').style.display = 'block';
-          loadAdmins();
+        if (currentUser.role === 'reseller') {
+          document.getElementById('credits-chip').style.display = 'block';
+          document.getElementById('current-credits-val').innerText = (currentUser.credits || 0).toFixed(2);
+          document.getElementById('nav-staff').style.display = 'none';
+          document.getElementById('nav-settings').style.display = 'none';
         } else {
-          document.getElementById('super-admin-section').style.display = 'none';
+          document.getElementById('credits-chip').style.display = 'none';
+          document.getElementById('nav-staff').style.display = 'flex';
+          document.getElementById('nav-settings').style.display = 'flex';
         }
 
         loadUsers();
       } else {
         document.getElementById('auth-screen').style.display = 'block';
         document.getElementById('app-header').style.display = 'none';
+        document.getElementById('app-nav').style.display = 'none';
         document.getElementById('dashboard-screen').style.display = 'none';
       }
     }
@@ -355,13 +655,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Login failed');
+        const resp = await res.json();
+        if (!resp.success && !resp.token) throw new Error(resp.message || resp.error || 'Login failed');
 
-        localStorage.setItem('donzy_token', data.token);
-        localStorage.setItem('donzy_user', JSON.stringify(data.user));
-        token = data.token;
-        currentUser = data.user;
+        const userData = resp.data ? resp.data.user : (resp.user || { username, role: 'admin' });
+        const userToken = resp.data ? resp.data.token : resp.token;
+
+        localStorage.setItem('donzy_token', userToken);
+        localStorage.setItem('donzy_user', JSON.stringify(userData));
+        token = userToken;
+        currentUser = userData;
         checkAuth();
       } catch (err) {
         errBox.innerText = err.message;
@@ -377,14 +680,7 @@
       checkAuth();
     }
 
-    function getRemainingDays(expiresAt) {
-      if (!expiresAt) return '<span style="color:var(--stitch-cyan);">Lifetime</span>';
-      const diff = new Date(expiresAt) - new Date();
-      if (diff <= 0) return '<span style="color:var(--danger);">Expired</span>';
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-      return `<strong>${days}</strong> days left`;
-    }
-
+    // ----------------- USERS -----------------
     async function loadUsers() {
       try {
         const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -392,36 +688,39 @@
         const users = await res.json();
 
         let activeCount = 0;
-        let suspendedCount = 0;
         let expiredCount = 0;
+        let bannedCount = 0;
 
         const tbody = document.getElementById('users-table-body');
-        tbody.innerHTML = users.map(u => {
-          const isExpired = u.expires_at && new Date(u.expires_at) < new Date();
-          let displayStatus = u.status;
-          if (u.status === 'active' && isExpired) {
-            displayStatus = 'expired';
-            expiredCount++;
-          } else if (u.status === 'active') {
-            activeCount++;
+        tbody.innerHTML = (users || []).map(u => {
+          const rem = u.remaining || {};
+          if (u.status === 'Active') activeCount++;
+          if (u.status === 'Expired' || rem.is_expired) expiredCount++;
+          if (u.status === 'Banned') bannedCount++;
+
+          let remText = '0d';
+          if (rem.is_lifetime) {
+            remText = '<span style="color:var(--gold);">∞ Lifetime</span>';
+          } else if (rem.is_expired) {
+            remText = '<span class="status-expired">Expired</span>';
           } else {
-            suspendedCount++;
+            remText = `<strong>${rem.days}d ${rem.hours}h</strong>`;
           }
+
+          const statusClass = 'status-' + (u.status || 'active').toLowerCase();
 
           return `
             <tr>
-              <td>#${u.id}</td>
               <td><strong>${u.username}</strong></td>
-              <td><span class="status-${displayStatus}">${displayStatus.toUpperCase()}</span></td>
-              <td>${getRemainingDays(u.expires_at)}</td>
-              <td>${u.expires_at ? new Date(u.expires_at).toLocaleDateString() : 'Never'}</td>
-              <td>${u.created_by}</td>
-              <td style="display:flex; gap:0.4rem; align-items:center;">
-                <button class="btn btn-sm btn-secondary" onclick="toggleStatus(${u.id}, '${u.status}')">
-                  ${u.status === 'active' ? 'Suspend' : 'Activate'}
-                </button>
-                <button class="btn btn-sm btn-pink" onclick="extendLicense(${u.id}, 30)">+30d</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+              <td style="color:var(--text-muted); font-family: monospace;">${u.plain_password_ref || '••••'}</td>
+              <td><span class="${statusClass}">${u.status}</span></td>
+              <td>${remText}</td>
+              <td>${u.max_profiles || 5} Profiles</td>
+              <td>${u.hwid ? '<span style="color:var(--primary); font-size:0.8rem;">Bound</span>' : '<span style="color:var(--text-muted); font-size:0.8rem;">None</span>'}</td>
+              <td style="font-size:0.8rem; color:var(--text-muted);">${u.expires_at ? new Date(u.expires_at).toLocaleDateString() : 'Lifetime'}</td>
+              <td>
+                <button class="btn btn-secondary btn-sm" onclick="resetHWID(${u.id})">Reset HWID</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Delete</button>
               </td>
             </tr>
           `;
@@ -429,106 +728,298 @@
 
         document.getElementById('stat-total').innerText = users.length;
         document.getElementById('stat-active').innerText = activeCount;
-        document.getElementById('stat-suspended').innerText = suspendedCount;
         document.getElementById('stat-expired').innerText = expiredCount;
-      } catch (e) { console.error(e); }
-    }
-
-    async function loadAdmins() {
-      try {
-        const res = await fetch('/api/admins', { headers: { 'Authorization': 'Bearer ' + token } });
-        const admins = await res.json();
-        const tbody = document.getElementById('admins-table-body');
-        tbody.innerHTML = admins.map(a => `
-          <tr>
-            <td>#${a.id}</td>
-            <td><strong>${a.username}</strong></td>
-            <td><span class="badge ${a.role === 'super_admin' ? 'badge-super' : 'badge-admin'}">${a.role}</span></td>
-            <td>${new Date(a.created_at).toLocaleDateString()}</td>
-            <td>
-              ${a.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteAdmin(${a.id})">Remove</button>` : '<em style="color:var(--text-muted);">Current</em>'}
-            </td>
-          </tr>
-        `).join('');
-      } catch (e) { console.error(e); }
+        document.getElementById('stat-banned').innerText = bannedCount;
+      } catch (err) {
+        console.error('loadUsers error:', err);
+      }
     }
 
     async function handleCreateUser(e) {
       e.preventDefault();
-      const username = document.getElementById('new-user-name').value.trim();
+      const username = document.getElementById('new-user-name').value;
       const password = document.getElementById('new-user-pass').value;
-      const expires_days = document.getElementById('new-user-days').value;
+      const days = document.getElementById('new-user-days').value;
+      const max_profiles = document.getElementById('new-user-profiles').value;
 
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ username, password, expires_days })
-      });
-      const data = await res.json();
-      if (!res.ok) alert(data.error || 'Failed to create user');
-      else {
-        e.target.reset();
-        document.getElementById('new-user-days').value = '30';
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ username, password, days, max_profiles })
+        });
+        const resp = await res.json();
+        if (!res.ok || resp.success === false) throw new Error(resp.message || 'Failed to create license');
+
+        document.getElementById('new-user-name').value = '';
+        document.getElementById('new-user-pass').value = '';
         loadUsers();
+        alert('License created successfully!');
+      } catch (err) {
+        alert(err.message);
       }
     }
 
-    async function extendLicense(id, days) {
-      await fetch(`/api/users/${id}/extend`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ days })
-      });
-      loadUsers();
-    }
-
-    async function handleCreateAdmin(e) {
-      e.preventDefault();
-      const username = document.getElementById('new-admin-user').value.trim();
-      const password = document.getElementById('new-admin-pass').value;
-      const role = document.getElementById('new-admin-role').value;
-
-      const res = await fetch('/api/admins', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ username, password, role })
-      });
-      const data = await res.json();
-      if (!res.ok) alert(data.error);
-      else {
-        e.target.reset();
-        loadAdmins();
+    async function resetHWID(id) {
+      if (!confirm('Are you sure you want to reset HWID for this license?')) return;
+      try {
+        const res = await fetch(`/api/users/${id}/reset-hwid`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const resp = await res.json();
+        alert(resp.message || 'HWID Reset');
+        loadUsers();
+      } catch (err) {
+        alert(err.message);
       }
-    }
-
-    async function toggleStatus(id, current) {
-      const next = current === 'active' ? 'suspended' : 'active';
-      await fetch(`/api/users/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ status: next })
-      });
-      loadUsers();
     }
 
     async function deleteUser(id) {
-      if (!confirm('Are you sure you want to revoke this user access?')) return;
-      await fetch(`/api/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      loadUsers();
+      if (!confirm('Are you sure you want to permanently delete this license?')) return;
+      try {
+        const res = await fetch(`/api/users/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadUsers();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
-    async function deleteAdmin(id) {
-      if (!confirm('Are you sure you want to remove this admin?')) return;
-      await fetch(`/api/admins/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      loadAdmins();
+    // ----------------- STAFF & RESELLERS -----------------
+    async function loadStaff() {
+      try {
+        const res = await fetch('/api/admin/staff', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const staff = await res.json();
+
+        const tbody = document.getElementById('staff-table-body');
+        tbody.innerHTML = (staff || []).map(s => {
+          return `
+            <tr>
+              <td>${s.id}</td>
+              <td><strong>${s.username}</strong></td>
+              <td><span class="badge ${s.role === 'super_admin' ? 'badge-super' : (s.role === 'admin' ? 'badge-admin' : 'badge-reseller')}">${s.role}</span></td>
+              <td><strong style="color:var(--gold);">🪙 ${parseFloat(s.credits_balance || 0).toFixed(2)}</strong></td>
+              <td><a href="${s.contact_url || '#'}" target="_blank" style="color:var(--primary); font-size:0.85rem;">${s.contact_url || 'None'}</a></td>
+              <td>
+                <input type="checkbox" ${s.is_visible_in_store ? 'checked' : ''} onchange="toggleStoreVisibility(${s.id}, this.checked)">
+              </td>
+              <td><span class="status-${(s.status || 'active').toLowerCase()}">${s.status}</span></td>
+              <td>
+                <button class="btn btn-secondary btn-sm" onclick="openCreditModal(${s.id}, '${s.username}', ${s.credits_balance || 0})">🪙 Credits</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteStaff(${s.id})">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('loadStaff error:', err);
+      }
     }
 
+    async function handleCreateStaff(e) {
+      e.preventDefault();
+      const username = document.getElementById('staff-user').value;
+      const password = document.getElementById('staff-pass').value;
+      const role = document.getElementById('staff-role').value;
+      const contact_url = document.getElementById('staff-contact').value;
+      const initial_credits = document.getElementById('staff-credits').value;
+
+      try {
+        const res = await fetch('/api/admin/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ username, password, role, contact_url, initial_credits })
+        });
+        const resp = await res.json();
+        if (!res.ok || resp.success === false) throw new Error(resp.message || 'Failed to create staff');
+
+        document.getElementById('staff-user').value = '';
+        document.getElementById('staff-pass').value = '';
+        loadStaff();
+        alert('Staff / Reseller created successfully!');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function toggleStoreVisibility(id, isVisible) {
+      try {
+        await fetch(`/api/admin/staff/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ is_visible_in_store: isVisible ? 1 : 0 })
+        });
+        loadStaff();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function openCreditModal(id, username, balance) {
+      document.getElementById('modal-staff-id').value = id;
+      document.getElementById('modal-staff-name').innerText = username;
+      document.getElementById('modal-current-bal').innerText = parseFloat(balance).toFixed(2);
+      document.getElementById('modal-amount').value = '';
+      document.getElementById('credit-modal').style.display = 'flex';
+    }
+
+    function closeCreditModal() {
+      document.getElementById('credit-modal').style.display = 'none';
+    }
+
+    async function submitCreditAdjustment(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-staff-id').value;
+      const action = document.getElementById('modal-action').value;
+      const amount = document.getElementById('modal-amount').value;
+
+      try {
+        const res = await fetch(`/api/admin/staff/${id}/credits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ action, amount })
+        });
+        const resp = await res.json();
+        if (!res.ok || resp.success === false) throw new Error(resp.message || 'Credit adjustment failed');
+
+        closeCreditModal();
+        loadStaff();
+        alert(resp.message);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteStaff(id) {
+      if (!confirm('Are you sure you want to delete this staff member?')) return;
+      try {
+        const res = await fetch(`/api/admin/staff/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadStaff();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ----------------- SETTINGS & KILL SWITCH -----------------
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/admin/settings', { headers: { 'Authorization': 'Bearer ' + token } });
+        const resp = await res.json();
+        if (!res.ok) return;
+        const s = resp.data || resp;
+
+        document.getElementById('cfg-app-version').value = s.app_version || 'v1.0';
+        document.getElementById('cfg-force-update').value = s.force_update ? '1' : '0';
+        document.getElementById('cfg-apk-url').value = s.apk_url || '';
+        document.getElementById('cfg-telegram-url').value = s.telegram_url || 'https://t.me/Sheldonph';
+        document.getElementById('cfg-support-url').value = s.support_url || 'https://t.me/Sheldonph';
+        document.getElementById('cfg-game-status').value = s.game_status || 'ONLINE';
+        document.getElementById('cfg-supported-version').value = s.supported_version_text || '8 Ball Pool v55.8.0+';
+        document.getElementById('cfg-ready-status').value = s.ready_status_text || 'Mod Ready';
+        document.getElementById('cfg-kill-switch').value = s.global_kill_switch ? '1' : '0';
+        document.getElementById('cfg-kill-msg').value = s.kill_switch_message || '';
+      } catch (err) {
+        console.error('loadSettings error:', err);
+      }
+    }
+
+    async function handleSaveSettings(e) {
+      e.preventDefault();
+      const body = {
+        app_version: document.getElementById('cfg-app-version').value,
+        force_update: document.getElementById('cfg-force-update').value === '1',
+        apk_url: document.getElementById('cfg-apk-url').value,
+        telegram_url: document.getElementById('cfg-telegram-url').value,
+        support_url: document.getElementById('cfg-support-url').value,
+        game_status: document.getElementById('cfg-game-status').value,
+        supported_version_text: document.getElementById('cfg-supported-version').value,
+        ready_status_text: document.getElementById('cfg-ready-status').value,
+        global_kill_switch: document.getElementById('cfg-kill-switch').value === '1',
+        kill_switch_message: document.getElementById('cfg-kill-msg').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(body)
+        });
+        const resp = await res.json();
+        if (!res.ok || resp.success === false) throw new Error(resp.message || 'Save failed');
+        alert('App configuration saved successfully!');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ----------------- ANNOUNCEMENTS -----------------
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch('/api/admin/announcements', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const tbody = document.getElementById('announcements-table-body');
+        tbody.innerHTML = (data || []).map(a => `
+          <tr>
+            <td>${a.id}</td>
+            <td><span class="badge ${a.badge_type === 'UPDATE' ? 'badge-super' : 'badge-admin'}">${a.badge_type}</span></td>
+            <td><strong>${a.title}</strong></td>
+            <td style="color:var(--text-muted);">${a.content}</td>
+            <td style="font-size:0.8rem; color:var(--text-muted);">${new Date(a.created_at).toLocaleDateString()}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(${a.id})">Delete</button></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('loadAnnouncements error:', err);
+      }
+    }
+
+    async function handleCreateAnnouncement(e) {
+      e.preventDefault();
+      const title = document.getElementById('ann-title').value;
+      const badge_type = document.getElementById('ann-badge').value;
+      const content = document.getElementById('ann-content').value;
+
+      try {
+        const res = await fetch('/api/admin/announcements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ title, badge_type, content })
+        });
+        const resp = await res.json();
+        if (!res.ok || resp.success === false) throw new Error(resp.message || 'Failed to post announcement');
+
+        document.getElementById('ann-title').value = '';
+        document.getElementById('ann-content').value = '';
+        loadAnnouncements();
+        alert('Broadcast posted!');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!confirm('Delete this broadcast?')) return;
+      try {
+        await fetch(`/api/admin/announcements/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadAnnouncements();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Init
     checkAuth();
   </script>
 </body>
