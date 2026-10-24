@@ -308,13 +308,20 @@ app.all(['/upload/alert-feed.php', '/alert-feed.php'], (req, res) => {
 
 app.all(['/upload/social-info.php', '/social-info.php'], (req, res) => {
   res.json({
-    telegram: 'https://t.me/donzy',
-    channel: 'https://t.me/donzy'
+    telegram: 'https://t.me/Sheldonph',
+    channel: 'https://t.me/Sheldonph',
+    technical_support: 'https://t.me/Sheldonph'
   });
 });
 
 app.all(['/upload/reseller-list.php', '/reseller-list.php'], (req, res) => {
-  res.json([]);
+  res.json([
+    {
+      name: 'Sheldon (Official)',
+      telegram: 'https://t.me/Sheldonph',
+      link: 'https://t.me/Sheldonph'
+    }
+  ]);
 });
 
 // SPA Catch-all
