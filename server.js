@@ -85,7 +85,7 @@ async function getAppSettings() {
     console.error('[SETTINGS] Fetch error:', err.message);
   }
   return {
-    app_version: '1.0',
+    app_version: '1.1',
     force_update: 0,
     apk_url: 'https://donzypanel.onrender.com/Donzy_v1.0.apk',
     telegram_url: 'https://t.me/Sheldonph',
@@ -612,7 +612,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     }
 
     // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
-    const serverVer = settings.force_update ? (settings.app_version || '1.0') : '1.0';
+    const serverVer = settings.force_update ? (settings.app_version || '1.1') : '1.1';
     const updateUrl = settings.force_update ? (settings.apk_url || '') : '';
     const userTier = (user && user.subscription_tier === 'Standard') ? 'Standard' : 'VIP';
     const maxProfiles = userTier === 'Standard' ? 2 : 5;
@@ -636,7 +636,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     return res.json({
       "check-user": "success",
       "app-1": {
-        "version-app": "1.0",
+        "version-app": "1.1",
         "URL Update": ""
       },
       "target_pool_version": "v56.29.1",

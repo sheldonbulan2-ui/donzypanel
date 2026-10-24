@@ -99,7 +99,7 @@ async function initDB() {
 
     try {
       await conn.query(`UPDATE app_settings SET apk_url = 'https://donzypanel.onrender.com/Donzy_v1.0.apk' WHERE id = 1 AND (apk_url IS NULL OR apk_url = '')`);
-      await conn.query(`UPDATE app_settings SET target_pool_version = 'v56.29.1', supported_version_text = '8 Ball Pool v56.29.1' WHERE id = 1`);
+      await conn.query(`UPDATE app_settings SET target_pool_version = 'v56.29.1', supported_version_text = '8 Ball Pool v56.29.1', app_version = '1.1' WHERE id = 1`);
       await conn.query(`UPDATE users SET max_profiles = 5 WHERE subscription_tier IN ('VIP', 'Premium') OR username = 'nono2'`);
       await conn.query(`UPDATE users SET max_profiles = 2 WHERE subscription_tier = 'Standard'`);
     } catch (ignoreMigration) {}
