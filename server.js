@@ -337,45 +337,78 @@ app.post('/api/v1/auth/logout', (req, res) => {
 });
 
 // ============================================================================
-// 2. LEGACY / MOD APP COMPATIBILITY ENDPOINTS (100% NON-BREAKING)
+// 2. LEGACY / MOD APP COMPATIBILITY ENDPOINTS (100% NON-BREAKING & REAL-TIME)
 // ============================================================================
 
 const handleClientValidate = async (req, res) => {
-  const username = req.body.username || req.body['username-activation'];
-  const password = req.body.password || req.body['password-activation'];
-  const deviceId = req.body.deviceId || req.body['user-device-id'] || '';
-  const isPhpAppRoute = req.path.includes('login-access.php');
-
-  if (!username || !password) {
-    if (isPhpAppRoute) {
-      return res.json([{ status: 'disable', message: 'Username and password required', geo_restricted: false, "check-user": "failed" }]);
-    }
-    return standardResponse(res, 400, false, 'Username and password required.');
-  }
-
+  const isPhpAppRoute = Boolean(req.path && req.path.includes('login-access.php'));
   try {
+    const username = req.body.username || req.body['username-activation'] || req.query.username;
+    const password = req.body.password || req.body['password-activation'] || req.query.password;
+    const deviceId = req.body.deviceId || req.body['user-device-id'] || req.query.deviceId || '';
+
+    if (!username || !password) {
+      if (isPhpAppRoute) {
+        return res.json([{
+          status: 'disabled',
+          message: 'Username and password required',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
+      }
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: 'Username and password required',
+        "check-user": "failed"
+      });
+    }
+
     const settings = await getAppSettings();
     if (Boolean(settings.global_kill_switch)) {
       if (isPhpAppRoute) {
-        return res.json([{ status: 'disable', message: settings.kill_switch_message || 'Maintenance', geo_restricted: false, "check-user": "failed" }]);
+        return res.json([{
+          status: 'disabled',
+          message: settings.kill_switch_message || 'Maintenance',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
       }
-      return standardResponse(res, 503, false, settings.kill_switch_message || 'Emergency server maintenance.');
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: settings.kill_switch_message || 'Server maintenance',
+        "check-user": "failed"
+      });
     }
 
-    // Lookup user in users table (and fallback to panel_users)
+    // Direct real-time lookup in users table
     let [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
     if (rows.length === 0) {
       [rows] = await pool.query('SELECT * FROM panel_users WHERE username = ?', [username]).catch(() => [[]]);
     }
 
     if (rows.length === 0) {
+      // User deleted or does not exist: REJECT immediately
       if (isPhpAppRoute) {
-        return res.json([{ status: 'disable', message: 'Invalid credentials', geo_restricted: false, "check-user": "failed" }]);
+        return res.json([{
+          status: 'disabled',
+          message: 'Invalid credentials',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
       }
-      return standardResponse(res, 401, false, 'Invalid credentials.');
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: 'Invalid credentials',
+        "check-user": "failed"
+      });
     }
 
     const user = rows[0];
+
+    // Password verification (bcrypt with plaintext ref fallback)
     let isMatch = false;
     try {
       isMatch = await bcrypt.compare(password, user.password_hash);
@@ -387,47 +420,93 @@ const handleClientValidate = async (req, res) => {
     }
 
     if (!isMatch) {
+      // Incorrect password: REJECT immediately
       if (isPhpAppRoute) {
-        return res.json([{ status: 'disable', message: 'Invalid credentials', geo_restricted: false, "check-user": "failed" }]);
+        return res.json([{
+          status: 'disabled',
+          message: 'Invalid credentials',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
       }
-      return standardResponse(res, 401, false, 'Invalid credentials.');
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: 'Invalid credentials',
+        "check-user": "failed"
+      });
     }
 
     if (user.status === 'Banned' || user.status === 'suspended') {
       if (isPhpAppRoute) {
-        return res.json([{ status: 'disable', message: 'Account banned', geo_restricted: false, "check-user": "failed" }]);
+        return res.json([{
+          status: 'disabled',
+          message: 'Account suspended',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
       }
-      return standardResponse(res, 403, false, 'Account suspended.');
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: 'Account suspended',
+        "check-user": "failed"
+      });
     }
 
-    // Check expiry
+    // Auto-activation on first login if status is Unused
     let expiresAt = user.expires_at ? new Date(user.expires_at) : null;
     if (user.status === 'Unused' || !expiresAt) {
       expiresAt = new Date(Date.now() + (user.duration_seconds || 2592000) * 1000);
-      await pool.query('UPDATE users SET status = "Active", first_login_at = NOW(), expires_at = ? WHERE id = ?', [expiresAt, user.id]);
+      await pool.query(
+        'UPDATE users SET status = "Active", first_login_at = NOW(), expires_at = ? WHERE id = ?',
+        [expiresAt, user.id]
+      );
     }
 
+    // Expiry check
     const remaining = calcRemaining(expiresAt);
     if (remaining.is_expired) {
       await pool.query('UPDATE users SET status = "Expired" WHERE id = ?', [user.id]);
       if (isPhpAppRoute) {
-        return res.json([{ status: 'disable', message: 'License expired', geo_restricted: false, "check-user": "failed" }]);
+        return res.json([{
+          status: 'disabled',
+          message: 'License expired',
+          geo_restricted: false,
+          "check-user": "failed"
+        }]);
       }
-      return standardResponse(res, 403, false, 'License expired.');
+      return res.json({
+        valid: false,
+        status: 'disabled',
+        message: 'License expired',
+        "check-user": "failed"
+      });
     }
 
-    // HWID check
+    // HWID Binding
     if (deviceId) {
       if (!user.hwid) {
         await pool.query('UPDATE users SET hwid = ? WHERE id = ?', [deviceId, user.id]).catch(() => {});
       } else if (user.hwid !== deviceId) {
         if (isPhpAppRoute) {
-          return res.json([{ status: 'disable', message: 'HWID mismatch', geo_restricted: false, "check-user": "failed" }]);
+          return res.json([{
+            status: 'disabled',
+            message: 'HWID mismatch',
+            geo_restricted: false,
+            "check-user": "failed"
+          }]);
         }
-        return standardResponse(res, 403, false, 'HWID mismatch.');
+        return res.json({
+          valid: false,
+          status: 'disabled',
+          message: 'HWID mismatch',
+          "check-user": "failed"
+        });
       }
     }
 
+    // SUCCESSFUL AUTHENTICATION
     if (isPhpAppRoute) {
       return res.json([{
         status: 'enable',
@@ -450,50 +529,206 @@ const handleClientValidate = async (req, res) => {
     });
   } catch (err) {
     if (isPhpAppRoute) {
-      return res.json([{ status: 'disable', message: 'Server error: ' + err.message, geo_restricted: false, "check-user": "failed" }]);
+      return res.json([{
+        status: 'disabled',
+        message: 'Server error',
+        geo_restricted: false,
+        "check-user": "failed"
+      }]);
     }
-    return standardResponse(res, 500, false, 'Server error: ' + err.message);
+    return res.json({
+      valid: false,
+      status: 'disabled',
+      message: 'Server error: ' + err.message,
+      "check-user": "failed"
+    });
   }
 };
 
 app.post('/api/validate', handleClientValidate);
 app.all(['/upload/login-access.php', '/login-access.php'], handleClientValidate);
 
-app.all(['/upload/social-info.php', '/social-info.php'], async (req, res) => {
-  const settings = await getAppSettings();
-  res.json({
-    telegram: settings.telegram_url || 'https://t.me/Sheldonph',
-    channel: settings.telegram_url || 'https://t.me/Sheldonph',
-    technical_support: settings.support_url || 'https://t.me/Sheldonph'
-  });
-});
-
-app.all(['/upload/reseller-list.php', '/reseller-list.php', '/api/v1/resellers'], async (req, res) => {
+// /upload/check-version.php - Critical Home Fragment version check & live session verification
+app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT username AS name, contact_url, payment_methods FROM staff_accounts WHERE is_visible_in_store = 1 AND status = "active"'
-    );
-    if (!rows || rows.length === 0) {
-      return res.json([]);
+    const username = req.body['username-activation'] || req.body.username || req.query.username;
+    const settings = await getAppSettings();
+
+    // If username is provided, check if user is still active in database
+    if (username) {
+      let [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+      if (rows.length === 0) {
+        [rows] = await pool.query('SELECT * FROM panel_users WHERE username = ?', [username]).catch(() => [[]]);
+      }
+
+      if (rows.length === 0) {
+        // User was deleted from Admin Panel: force logout in APK!
+        return res.json({
+          "check-user": "failed",
+          status: "disabled"
+        });
+      }
+
+      const user = rows[0];
+      if (user.status === 'Banned' || user.status === 'suspended') {
+        return res.json({
+          "check-user": "failed",
+          status: "disabled"
+        });
+      }
+
+      if (user.expires_at) {
+        const remaining = calcRemaining(user.expires_at);
+        if (remaining.is_expired) {
+          return res.json({
+            "check-user": "failed",
+            status: "disabled"
+          });
+        }
+      }
     }
-    res.json(rows.map(r => ({
-      name: r.name,
-      telegram: r.contact_url || 'https://t.me/Sheldonph',
-      link: r.contact_url || 'https://t.me/Sheldonph',
-      payment_methods: r.payment_methods || 'GCash / Maya / Crypto'
-    })));
+
+    // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
+    const serverVer = settings.force_update ? (settings.app_version || '1.0') : '1.0';
+    const updateUrl = settings.force_update ? (settings.apk_url || '') : '';
+
+    return res.json({
+      "check-user": "success",
+      "app-1": {
+        "version-app": serverVer,
+        "URL Update": updateUrl
+      }
+    });
   } catch (err) {
-    res.json([]);
+    return res.json({
+      "check-user": "success",
+      "app-1": {
+        "version-app": "1.0",
+        "URL Update": ""
+      }
+    });
   }
 });
 
+// /upload/social-info.php - Store & Support Telegram links (Parsed as JSONArray)
+app.all(['/upload/social-info.php', '/social-info.php'], async (req, res) => {
+  try {
+    const settings = await getAppSettings();
+    return res.json([
+      {
+        telegram: settings.telegram_url || 'https://t.me/Sheldonph',
+        channel: settings.telegram_url || 'https://t.me/Sheldonph',
+        technical_support: settings.support_url || 'https://t.me/Sheldonph',
+        support: settings.support_url || 'https://t.me/Sheldonph'
+      }
+    ]);
+  } catch (err) {
+    return res.json([
+      {
+        telegram: 'https://t.me/Sheldonph',
+        channel: 'https://t.me/Sheldonph',
+        technical_support: 'https://t.me/Sheldonph',
+        support: 'https://t.me/Sheldonph'
+      }
+    ]);
+  }
+});
+
+// /upload/reseller-list.php - Store Resellers List (Parsed as JSONArray with result: 9 and regions)
+app.all(['/upload/reseller-list.php', '/reseller-list.php', '/api/v1/resellers'], async (req, res) => {
+  try {
+    const username = req.body['username-activation'] || req.body.username || req.query.username;
+    
+    // Check if caller's user account was deleted
+    if (username) {
+      let [uRows] = await pool.query('SELECT id, status FROM users WHERE username = ?', [username]);
+      if (uRows.length === 0) {
+        return res.json([
+          {
+            "check-user": "failed",
+            result: 0,
+            regions: []
+          }
+        ]);
+      }
+    }
+
+    const [rows] = await pool.query(
+      'SELECT username, contact_url, payment_methods FROM staff_accounts WHERE is_visible_in_store = 1 AND status = "active"'
+    );
+    
+    let regions = [];
+    if (rows && rows.length > 0) {
+      regions = [
+        {
+          name: "Official Resellers",
+          icon: "",
+          resellers: rows.map(r => ({
+            un: r.username,
+            telegram_id: r.contact_url ? r.contact_url.replace(/https?:\/\/t\.me\//, '').replace('@', '') : 'Sheldonph',
+            whatsapp_id: ''
+          }))
+        }
+      ];
+    }
+
+    return res.json([
+      {
+        "check-user": "active",
+        result: 9,
+        icon_base: "",
+        image_base: "",
+        telegram_base: "https://telegram.me/",
+        whatsapp_base: "https://wa.me/",
+        regions: regions
+      }
+    ]);
+  } catch (err) {
+    return res.json([
+      {
+        "check-user": "active",
+        result: 9,
+        icon_base: "",
+        image_base: "",
+        telegram_base: "https://telegram.me/",
+        whatsapp_base: "https://wa.me/",
+        regions: []
+      }
+    ]);
+  }
+});
+
+// /upload/alert-feed.php - Home & News feed (Parsed as JSONArray with result: 9 and messages)
 app.all(['/upload/alert-feed.php', '/alert-feed.php'], async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT title, content, badge_type FROM announcements WHERE is_published = 1 ORDER BY id DESC');
-    res.json(rows || []);
+    let messages = [];
+    if (rows && rows.length > 0) {
+      messages = rows.map(a => ({ body: `${a.title}: ${a.content}` }));
+    }
+    return res.json([
+      {
+        result: 9,
+        assets_base: "upload/assets/",
+        media: [],
+        messages: messages
+      }
+    ]);
   } catch (err) {
-    res.json([]);
+    return res.json([
+      {
+        result: 9,
+        assets_base: "upload/assets/",
+        media: [],
+        messages: []
+      }
+    ]);
   }
+});
+
+// /upload/logcat.php - BlackBoxCore logging
+app.all(['/upload/logcat.php', '/logcat.php'], (req, res) => {
+  return res.json({ success: true, message: 'Log received' });
 });
 
 // ============================================================================
@@ -724,6 +959,7 @@ app.post('/api/users/:id/reset-hwid', authStaff, async (req, res) => {
 app.delete('/api/users/:id', authStaff, async (req, res) => {
   try {
     await pool.query('DELETE FROM users WHERE id = ?', [req.params.id]);
+    await pool.query('DELETE FROM panel_users WHERE id = ?', [req.params.id]).catch(() => {});
     return standardResponse(res, 200, true, 'License deleted.');
   } catch (err) {
     return standardResponse(res, 500, false, err.message);
@@ -957,11 +1193,18 @@ app.delete('/api/admin/announcements/:id', authStaff, requireAdmin, async (req, 
 // 4. SPA FALLBACK & GLOBAL ERROR HANDLER (ZERO CRASH)
 // ============================================================================
 
+// Catch-all for API, PHP, and Upload routes - MUST return JSON, NEVER HTML, NEVER active/enable
+app.all(['/api/*', '*.php', '/upload/*'], (req, res) => {
+  return res.status(404).json({
+    valid: false,
+    status: 'disabled',
+    message: `Endpoint not found: ${req.method} ${req.path}`,
+    "check-user": "failed"
+  });
+});
+
 // SPA Frontend
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.endsWith('.php')) {
-    return standardResponse(res, 404, false, `Endpoint not found: ${req.method} ${req.path}`);
-  }
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
