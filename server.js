@@ -85,9 +85,9 @@ async function getAppSettings() {
     console.error('[SETTINGS] Fetch error:', err.message);
   }
   return {
-    app_version: '1.1',
+    app_version: '1.2',
     force_update: 0,
-    apk_url: 'https://donzypanel.onrender.com/Donzy_v1.0.apk',
+    apk_url: 'https://donzypanel.onrender.com/donzy2.apk',
     telegram_url: 'https://t.me/Sheldonph',
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
@@ -612,8 +612,10 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     }
 
     // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
-    const serverVer = settings.force_update ? (settings.app_version || '1.1') : '1.1';
-    const updateUrl = settings.force_update ? (settings.apk_url || '') : '';
+    const clientAppVersion = req.body['app-version'] || req.query['app-version'] || '';
+    const forceUpdate = Boolean(settings.force_update);
+    const serverVer = forceUpdate ? (settings.app_version || '1.2') : (clientAppVersion || settings.app_version || '1.2');
+    const updateUrl = forceUpdate ? (settings.apk_url || 'https://donzypanel.onrender.com/donzy2.apk') : '';
     const userTier = (user && user.subscription_tier === 'Standard') ? 'Standard' : 'VIP';
     const maxProfiles = userTier === 'Standard' ? 2 : 5;
     const expSeconds = (user && user.expires_at) ? Math.floor(new Date(user.expires_at).getTime() / 1000) : 0;
