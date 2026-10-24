@@ -83,33 +83,50 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-// 2. Client Authentication Validation Handler (supports /api/validate and /upload/login-access.php)
+// 2. Client Authentication Validation Handler
+// Supports both /api/validate (JSON) and /upload/login-access.php (Form / App)
 const handleClientValidate = async (req, res) => {
   const username = req.body.username || req.body['username-activation'];
   const password = req.body.password || req.body['password-activation'];
   const deviceId = req.body.deviceId || req.body['user-device-id'];
+  const isPhpAppRoute = req.path.includes('login-access.php');
 
   if (!username || !password) {
+    if (isPhpAppRoute) {
+      return res.json([{ status: 'disable', message: 'Username and password required', geo_restricted: false, "check-user": "failed" }]);
+    }
     return res.status(400).json({ valid: false, status: 'error', message: 'Username and password required.' });
   }
 
   try {
     const [rows] = await pool.query('SELECT * FROM panel_users WHERE username = ?', [username]);
     if (rows.length === 0) {
+      if (isPhpAppRoute) {
+        return res.json([{ status: 'disable', message: 'Account not found or unauthorized', geo_restricted: false, "check-user": "failed" }]);
+      }
       return res.status(401).json({ valid: false, status: 'error', message: 'Account not found or unauthorized.' });
     }
 
     const user = rows[0];
     if (user.status !== 'active') {
+      if (isPhpAppRoute) {
+        return res.json([{ status: 'disable', message: `Account is ${user.status}`, geo_restricted: false, "check-user": "failed" }]);
+      }
       return res.status(403).json({ valid: false, status: user.status, message: `Account is ${user.status}.` });
     }
 
     if (user.expires_at && new Date(user.expires_at) < new Date()) {
+      if (isPhpAppRoute) {
+        return res.json([{ status: 'disable', message: 'Account has expired', geo_restricted: false, "check-user": "failed" }]);
+      }
       return res.status(403).json({ valid: false, status: 'expired', message: 'Account has expired.' });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
+      if (isPhpAppRoute) {
+        return res.json([{ status: 'disable', message: 'Invalid credentials', geo_restricted: false, "check-user": "failed" }]);
+      }
       return res.status(401).json({ valid: false, status: 'error', message: 'Invalid credentials.' });
     }
 
@@ -117,19 +134,30 @@ const handleClientValidate = async (req, res) => {
       ? Math.max(0, Math.floor((new Date(user.expires_at).getTime() - Date.now()) / 1000))
       : 2592000;
 
-    res.json({
-      valid: true,
+    const payload = {
       status: 'enable',
+      valid: true,
       result: 9,
-      message: 'Access granted',
+      username: user.username,
+      remaining_time: remainingSeconds.toString(),
+      remaining_seconds: remainingSeconds,
+      geo_restricted: false,
+      "check-user": "ok",
       user: {
         username: user.username,
         status: user.status,
         expires_at: user.expires_at
-      },
-      remaining_seconds: remainingSeconds
-    });
+      }
+    };
+
+    if (isPhpAppRoute) {
+      return res.json([payload]);
+    }
+    return res.json(payload);
   } catch (err) {
+    if (isPhpAppRoute) {
+      return res.json([{ status: 'disable', message: 'Verification error', geo_restricted: false, "check-user": "failed" }]);
+    }
     res.status(500).json({ valid: false, status: 'error', message: 'Verification error: ' + err.message });
   }
 };
