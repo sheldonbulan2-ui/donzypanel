@@ -91,8 +91,8 @@ async function getAppSettings() {
     telegram_url: 'https://t.me/Sheldonph',
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
-    supported_version_text: '8 Ball Pool v55.8.0+',
-    target_pool_version: '55.6.0',
+    supported_version_text: '8 Ball Pool v56.29.1',
+    target_pool_version: 'v56.29.1',
     ready_status_text: 'Mod Ready',
     global_kill_switch: 0,
     kill_switch_message: 'Server is undergoing maintenance. Please try again shortly.'
@@ -256,8 +256,8 @@ app.post('/api/v1/auth/login', async (req, res) => {
         telegram_url: settings.telegram_url || 'https://t.me/Sheldonph',
         support_url: settings.support_url || 'https://t.me/Sheldonph',
         game_status: settings.game_status || 'ONLINE',
-        supported_version_text: settings.supported_version_text || '8 Ball Pool v55.8.0+',
-        target_pool_version: settings.target_pool_version || '55.6.0',
+        supported_version_text: settings.supported_version_text || '8 Ball Pool v56.29.1',
+        target_pool_version: settings.target_pool_version || 'v56.29.1',
         ready_status_text: settings.ready_status_text || 'Mod Ready'
       }
     });
@@ -321,8 +321,8 @@ app.get('/api/v1/app/bootstrap', async (req, res) => {
       telegram_url: settings.telegram_url || 'https://t.me/Sheldonph',
       support_url: settings.support_url || 'https://t.me/Sheldonph',
       game_status: settings.game_status || 'ONLINE',
-      supported_version_text: settings.supported_version_text || '8 Ball Pool v55.8.0+',
-      target_pool_version: settings.target_pool_version || '55.6.0',
+      supported_version_text: settings.supported_version_text || '8 Ball Pool v56.29.1',
+      target_pool_version: settings.target_pool_version || 'v56.29.1',
       ready_status_text: settings.ready_status_text || 'Mod Ready',
       global_kill_switch: Boolean(settings.global_kill_switch),
       kill_switch_message: settings.kill_switch_message || '',
@@ -510,8 +510,9 @@ const handleClientValidate = async (req, res) => {
     }
 
     // SUCCESSFUL AUTHENTICATION
-    const userTier = user.subscription_tier === 'Standard' ? 'Standard' : 'VIP';
-    const maxProfiles = userTier === 'Standard' ? 2 : (user.max_profiles || 5);
+    const userTier = (user.subscription_tier === 'Standard') ? 'Standard' : 'VIP';
+    const maxProfiles = userTier === 'Standard' ? 2 : 5;
+    const expSeconds = expiresAt ? Math.floor(new Date(expiresAt).getTime() / 1000) : (Math.floor(Date.now() / 1000) + 86400 * 30);
 
     if (isPhpAppRoute) {
       return res.json([{
@@ -520,24 +521,33 @@ const handleClientValidate = async (req, res) => {
         geo_restricted: false,
         "check-user": "success",
         days_left: remaining.days,
+        "remaining-time": expSeconds,
+        expires_at_timestamp: expSeconds,
         expires_at: expiresAt ? expiresAt.toISOString() : '',
         subscription_tier: userTier,
         max_profiles: maxProfiles,
-        target_pool_version: settings.target_pool_version || '55.6.0'
+        target_pool_version: settings.target_pool_version || 'v56.29.1'
       }]);
     }
 
     return res.json({
       valid: true,
       status: 'active',
+      subscription_tier: userTier,
+      max_profiles: maxProfiles,
+      "remaining-time": expSeconds,
+      expires_at_timestamp: expSeconds,
+      days_left: remaining.days,
+      target_pool_version: settings.target_pool_version || 'v56.29.1',
       user: {
         username: user.username,
         expires_at: expiresAt ? expiresAt.toISOString() : null,
         days_left: remaining.days,
+        "remaining-time": expSeconds,
+        expires_at_timestamp: expSeconds,
         subscription_tier: userTier,
         max_profiles: maxProfiles
-      },
-      target_pool_version: settings.target_pool_version || '55.6.0'
+      }
     });
   } catch (err) {
     if (isPhpAppRoute) {
@@ -604,8 +614,10 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
     const serverVer = settings.force_update ? (settings.app_version || '1.0') : '1.0';
     const updateUrl = settings.force_update ? (settings.apk_url || '') : '';
-    const userTier = user ? (user.subscription_tier === 'Standard' ? 'Standard' : 'VIP') : 'VIP';
-    const maxProfiles = userTier === 'Standard' ? 2 : (user ? (user.max_profiles || 5) : 5);
+    const userTier = (user && user.subscription_tier === 'Standard') ? 'Standard' : 'VIP';
+    const maxProfiles = userTier === 'Standard' ? 2 : 5;
+    const expSeconds = (user && user.expires_at) ? Math.floor(new Date(user.expires_at).getTime() / 1000) : 0;
+    const daysLeft = (user && user.expires_at) ? calcRemaining(user.expires_at).days : 30;
 
     return res.json({
       "check-user": "success",
@@ -613,9 +625,12 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
         "version-app": serverVer,
         "URL Update": updateUrl
       },
-      "target_pool_version": settings.target_pool_version || "55.6.0",
+      "target_pool_version": settings.target_pool_version || "v56.29.1",
       "subscription_tier": userTier,
-      "max_profiles": maxProfiles
+      "max_profiles": maxProfiles,
+      "remaining-time": expSeconds,
+      "expires_at_timestamp": expSeconds,
+      "days_left": daysLeft
     });
   } catch (err) {
     return res.json({
@@ -624,9 +639,12 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
         "version-app": "1.0",
         "URL Update": ""
       },
-      "target_pool_version": "55.6.0",
+      "target_pool_version": "v56.29.1",
       "subscription_tier": "VIP",
-      "max_profiles": 5
+      "max_profiles": 5,
+      "remaining-time": 0,
+      "expires_at_timestamp": 0,
+      "days_left": 30
     });
   }
 });

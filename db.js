@@ -94,12 +94,15 @@ async function initDB() {
 
     // Safe migration: Add target_pool_version to app_settings if not exists
     try {
-      await conn.query(`ALTER TABLE app_settings ADD COLUMN target_pool_version VARCHAR(50) DEFAULT '55.6.0'`);
+      await conn.query(`ALTER TABLE app_settings ADD COLUMN target_pool_version VARCHAR(50) DEFAULT 'v56.29.1'`);
     } catch (ignoreCol) {}
 
     try {
       await conn.query(`UPDATE app_settings SET apk_url = 'https://donzypanel.onrender.com/Donzy_v1.0.apk' WHERE id = 1 AND (apk_url IS NULL OR apk_url = '')`);
-    } catch (ignoreUrl) {}
+      await conn.query(`UPDATE app_settings SET target_pool_version = 'v56.29.1', supported_version_text = '8 Ball Pool v56.29.1' WHERE id = 1`);
+      await conn.query(`UPDATE users SET max_profiles = 5 WHERE subscription_tier IN ('VIP', 'Premium') OR username = 'nono2'`);
+      await conn.query(`UPDATE users SET max_profiles = 2 WHERE subscription_tier = 'Standard'`);
+    } catch (ignoreMigration) {}
 
     // 5. Seed default App Settings (Row 1)
     const [settingsRows] = await conn.query('SELECT id FROM app_settings WHERE id = 1');

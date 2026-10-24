@@ -480,8 +480,8 @@
           </div>
           <div class="form-group">
             <label>Target 8 Ball Pool Version (APK Detection Check)</label>
-            <input type="text" id="cfg-target-pool-version" placeholder="55.6.0 (or 'All' for any version)">
-            <small style="color:var(--text-muted); font-size:0.75rem;">Set specific version like 55.6.0, or type All to allow all installed versions.</small>
+            <input type="text" id="cfg-target-pool-version" placeholder="v56.29.1 (or 'All' for any version)">
+            <small style="color:var(--text-muted); font-size:0.75rem;">Set specific version like v56.29.1, or type All to allow all installed versions.</small>
           </div>
           <div class="form-group">
             <label>Mod Ready Status Text</label>
@@ -931,8 +931,8 @@
         document.getElementById('cfg-telegram-url').value = s.telegram_url || 'https://t.me/Sheldonph';
         document.getElementById('cfg-support-url').value = s.support_url || 'https://t.me/Sheldonph';
         document.getElementById('cfg-game-status').value = s.game_status || 'ONLINE';
-        document.getElementById('cfg-supported-version').value = s.supported_version_text || '8 Ball Pool v55.8.0+';
-        document.getElementById('cfg-target-pool-version').value = s.target_pool_version || '55.6.0';
+        document.getElementById('cfg-supported-version').value = s.supported_version_text || '8 Ball Pool v56.29.1';
+        document.getElementById('cfg-target-pool-version').value = s.target_pool_version || 'v56.29.1';
         document.getElementById('cfg-ready-status').value = s.ready_status_text || 'Mod Ready';
         document.getElementById('cfg-kill-switch').value = s.global_kill_switch ? '1' : '0';
         document.getElementById('cfg-kill-msg').value = s.kill_switch_message || '';
@@ -951,7 +951,7 @@
         support_url: document.getElementById('cfg-support-url').value,
         game_status: document.getElementById('cfg-game-status').value,
         supported_version_text: document.getElementById('cfg-supported-version').value,
-        target_pool_version: document.getElementById('cfg-target-pool-version').value || '55.6.0',
+        target_pool_version: document.getElementById('cfg-target-pool-version').value || 'v56.29.1',
         ready_status_text: document.getElementById('cfg-ready-status').value,
         global_kill_switch: document.getElementById('cfg-kill-switch').value === '1',
         kill_switch_message: document.getElementById('cfg-kill-msg').value
