@@ -344,13 +344,12 @@
             </div>
           </div>
           <div>
-            <label>Max Profiles (Accounts)</label>
-            <select id="new-user-profiles">
-              <option value="1">1 Account</option>
-              <option value="3">3 Accounts</option>
-              <option value="5" selected>5 Accounts (Standard)</option>
-              <option value="10">10 Accounts (VIP)</option>
+            <label>Plan Tier &amp; Profile Limit</label>
+            <select id="new-user-tier" onchange="syncTierProfiles()">
+              <option value="Standard">Standard (Max 2 Profiles)</option>
+              <option value="VIP" selected>VIP / Premium (Max 5 Profiles)</option>
             </select>
+            <input type="hidden" id="new-user-profiles" value="5">
           </div>
           <button class="btn" type="submit" style="height: 38px;">Generate Key</button>
         </form>
@@ -478,6 +477,11 @@
           <div class="form-group">
             <label>Supported 8 Ball Pool Version Text</label>
             <input type="text" id="cfg-supported-version" placeholder="8 Ball Pool v55.8.0+">
+          </div>
+          <div class="form-group">
+            <label>Target 8 Ball Pool Version (APK Detection Check)</label>
+            <input type="text" id="cfg-target-pool-version" placeholder="55.6.0 (or 'All' for any version)">
+            <small style="color:var(--text-muted); font-size:0.75rem;">Set specific version like 55.6.0, or type All to allow all installed versions.</small>
           </div>
           <div class="form-group">
             <label>Mod Ready Status Text</label>
@@ -715,7 +719,7 @@
               <td style="color:var(--text-muted); font-family: monospace;">${u.plain_password_ref || '••••'}</td>
               <td><span class="${statusClass}">${u.status}</span></td>
               <td>${remText}</td>
-              <td>${u.max_profiles || 5} Profiles</td>
+              <td><span class="badge" style="background:rgba(217, 119, 6, 0.2); color:#fbbf24; border:1px solid #d97706; padding:2px 8px; border-radius:4px; font-weight:bold;">${u.subscription_tier || 'VIP'} (${u.max_profiles || 5} Profiles)</span></td>
               <td>${u.hwid ? '<span style="color:var(--primary); font-size:0.8rem;">Bound</span>' : '<span style="color:var(--text-muted); font-size:0.8rem;">None</span>'}</td>
               <td style="font-size:0.8rem; color:var(--text-muted);">${u.expires_at ? new Date(u.expires_at).toLocaleDateString() : 'Lifetime'}</td>
               <td>
@@ -735,18 +739,24 @@
       }
     }
 
+    function syncTierProfiles() {
+      const tier = document.getElementById('new-user-tier').value;
+      document.getElementById('new-user-profiles').value = tier === 'Standard' ? 2 : 5;
+    }
+
     async function handleCreateUser(e) {
       e.preventDefault();
       const username = document.getElementById('new-user-name').value;
       const password = document.getElementById('new-user-pass').value;
       const days = document.getElementById('new-user-days').value;
+      const subscription_tier = document.getElementById('new-user-tier').value;
       const max_profiles = document.getElementById('new-user-profiles').value;
 
       try {
         const res = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ username, password, days, max_profiles })
+          body: JSON.stringify({ username, password, days, subscription_tier, max_profiles })
         });
         const resp = await res.json();
         if (!res.ok || resp.success === false) throw new Error(resp.message || 'Failed to create license');
@@ -922,6 +932,7 @@
         document.getElementById('cfg-support-url').value = s.support_url || 'https://t.me/Sheldonph';
         document.getElementById('cfg-game-status').value = s.game_status || 'ONLINE';
         document.getElementById('cfg-supported-version').value = s.supported_version_text || '8 Ball Pool v55.8.0+';
+        document.getElementById('cfg-target-pool-version').value = s.target_pool_version || '55.6.0';
         document.getElementById('cfg-ready-status').value = s.ready_status_text || 'Mod Ready';
         document.getElementById('cfg-kill-switch').value = s.global_kill_switch ? '1' : '0';
         document.getElementById('cfg-kill-msg').value = s.kill_switch_message || '';
@@ -940,6 +951,7 @@
         support_url: document.getElementById('cfg-support-url').value,
         game_status: document.getElementById('cfg-game-status').value,
         supported_version_text: document.getElementById('cfg-supported-version').value,
+        target_pool_version: document.getElementById('cfg-target-pool-version').value || '55.6.0',
         ready_status_text: document.getElementById('cfg-ready-status').value,
         global_kill_switch: document.getElementById('cfg-kill-switch').value === '1',
         kill_switch_message: document.getElementById('cfg-kill-msg').value

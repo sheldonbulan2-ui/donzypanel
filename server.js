@@ -92,6 +92,7 @@ async function getAppSettings() {
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
     supported_version_text: '8 Ball Pool v55.8.0+',
+    target_pool_version: '55.6.0',
     ready_status_text: 'Mod Ready',
     global_kill_switch: 0,
     kill_switch_message: 'Server is undergoing maintenance. Please try again shortly.'
@@ -256,6 +257,7 @@ app.post('/api/v1/auth/login', async (req, res) => {
         support_url: settings.support_url || 'https://t.me/Sheldonph',
         game_status: settings.game_status || 'ONLINE',
         supported_version_text: settings.supported_version_text || '8 Ball Pool v55.8.0+',
+        target_pool_version: settings.target_pool_version || '55.6.0',
         ready_status_text: settings.ready_status_text || 'Mod Ready'
       }
     });
@@ -320,6 +322,7 @@ app.get('/api/v1/app/bootstrap', async (req, res) => {
       support_url: settings.support_url || 'https://t.me/Sheldonph',
       game_status: settings.game_status || 'ONLINE',
       supported_version_text: settings.supported_version_text || '8 Ball Pool v55.8.0+',
+      target_pool_version: settings.target_pool_version || '55.6.0',
       ready_status_text: settings.ready_status_text || 'Mod Ready',
       global_kill_switch: Boolean(settings.global_kill_switch),
       kill_switch_message: settings.kill_switch_message || '',
@@ -507,6 +510,9 @@ const handleClientValidate = async (req, res) => {
     }
 
     // SUCCESSFUL AUTHENTICATION
+    const userTier = user.subscription_tier === 'Standard' ? 'Standard' : 'VIP';
+    const maxProfiles = userTier === 'Standard' ? 2 : (user.max_profiles || 5);
+
     if (isPhpAppRoute) {
       return res.json([{
         status: 'enable',
@@ -514,7 +520,10 @@ const handleClientValidate = async (req, res) => {
         geo_restricted: false,
         "check-user": "success",
         days_left: remaining.days,
-        expires_at: expiresAt ? expiresAt.toISOString() : ''
+        expires_at: expiresAt ? expiresAt.toISOString() : '',
+        subscription_tier: userTier,
+        max_profiles: maxProfiles,
+        target_pool_version: settings.target_pool_version || '55.6.0'
       }]);
     }
 
@@ -524,8 +533,11 @@ const handleClientValidate = async (req, res) => {
       user: {
         username: user.username,
         expires_at: expiresAt ? expiresAt.toISOString() : null,
-        days_left: remaining.days
-      }
+        days_left: remaining.days,
+        subscription_tier: userTier,
+        max_profiles: maxProfiles
+      },
+      target_pool_version: settings.target_pool_version || '55.6.0'
     });
   } catch (err) {
     if (isPhpAppRoute) {
@@ -554,6 +566,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     const username = req.body['username-activation'] || req.body.username || req.query.username;
     const settings = await getAppSettings();
 
+    let user = null;
     // If username is provided, check if user is still active in database
     if (username) {
       let [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
@@ -569,7 +582,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
         });
       }
 
-      const user = rows[0];
+      user = rows[0];
       if (user.status === 'Banned' || user.status === 'suspended') {
         return res.json({
           "check-user": "failed",
@@ -591,13 +604,18 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
     const serverVer = settings.force_update ? (settings.app_version || '1.0') : '1.0';
     const updateUrl = settings.force_update ? (settings.apk_url || '') : '';
+    const userTier = user ? (user.subscription_tier === 'Standard' ? 'Standard' : 'VIP') : 'VIP';
+    const maxProfiles = userTier === 'Standard' ? 2 : (user ? (user.max_profiles || 5) : 5);
 
     return res.json({
       "check-user": "success",
       "app-1": {
         "version-app": serverVer,
         "URL Update": updateUrl
-      }
+      },
+      "target_pool_version": settings.target_pool_version || "55.6.0",
+      "subscription_tier": userTier,
+      "max_profiles": maxProfiles
     });
   } catch (err) {
     return res.json({
@@ -605,7 +623,10 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
       "app-1": {
         "version-app": "1.0",
         "URL Update": ""
-      }
+      },
+      "target_pool_version": "55.6.0",
+      "subscription_tier": "VIP",
+      "max_profiles": 5
     });
   }
 });
@@ -833,10 +854,16 @@ app.get('/api/users', authStaff, async (req, res) => {
 
 // POST /api/users (Create License)
 app.post('/api/users', authStaff, async (req, res) => {
-  const { username, password, days = 30, max_profiles = 5, subscription_tier = 'Premium' } = req.body;
+  const { username, password, days = 30, subscription_tier = 'VIP' } = req.body;
+  let max_profiles = req.body.max_profiles;
   if (!username || !password) {
     return standardResponse(res, 400, false, 'Username and password required.');
   }
+
+  // Tier Profile Limit Rule:
+  // Standard -> max 2 profiles. VIP / Premium -> max 5 profiles.
+  const resolvedTier = subscription_tier === 'Standard' ? 'Standard' : 'VIP';
+  const resolvedProfiles = resolvedTier === 'Standard' ? 2 : (parseInt(max_profiles, 10) || 5);
 
   const conn = await pool.getConnection();
   try {
@@ -887,11 +914,11 @@ app.post('/api/users', authStaff, async (req, res) => {
       username,
       hash,
       password,
-      subscription_tier,
+      resolvedTier,
       durationSeconds,
       expiresAt,
       initialStatus,
-      parseInt(max_profiles, 10) || 5,
+      resolvedProfiles,
       req.staff.id
     ]);
 
@@ -918,13 +945,18 @@ app.put('/api/users/:id', authStaff, async (req, res) => {
       updates.push('status = ?');
       values.push(status);
     }
+    if (subscription_tier) {
+      const resolvedTier = subscription_tier === 'Standard' ? 'Standard' : 'VIP';
+      updates.push('subscription_tier = ?');
+      values.push(resolvedTier);
+      if (max_profiles === undefined) {
+        updates.push('max_profiles = ?');
+        values.push(resolvedTier === 'Standard' ? 2 : 5);
+      }
+    }
     if (max_profiles !== undefined) {
       updates.push('max_profiles = ?');
       values.push(parseInt(max_profiles, 10));
-    }
-    if (subscription_tier) {
-      updates.push('subscription_tier = ?');
-      values.push(subscription_tier);
     }
     if (days !== undefined) {
       const exp = new Date();
@@ -1111,7 +1143,7 @@ app.get('/api/admin/settings', authStaff, async (req, res) => {
 app.post('/api/admin/settings', authStaff, requireAdmin, async (req, res) => {
   const {
     app_version, force_update, apk_url, telegram_url, support_url,
-    game_status, supported_version_text, ready_status_text,
+    game_status, supported_version_text, target_pool_version, ready_status_text,
     global_kill_switch, kill_switch_message
   } = req.body;
 
@@ -1125,6 +1157,7 @@ app.post('/api/admin/settings', authStaff, requireAdmin, async (req, res) => {
         support_url = COALESCE(?, support_url),
         game_status = COALESCE(?, game_status),
         supported_version_text = COALESCE(?, supported_version_text),
+        target_pool_version = COALESCE(?, target_pool_version),
         ready_status_text = COALESCE(?, ready_status_text),
         global_kill_switch = COALESCE(?, global_kill_switch),
         kill_switch_message = COALESCE(?, kill_switch_message)
@@ -1137,6 +1170,7 @@ app.post('/api/admin/settings', authStaff, requireAdmin, async (req, res) => {
       support_url,
       game_status,
       supported_version_text,
+      target_pool_version,
       ready_status_text,
       global_kill_switch !== undefined ? (global_kill_switch ? 1 : 0) : null,
       kill_switch_message

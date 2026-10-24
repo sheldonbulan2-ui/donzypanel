@@ -84,12 +84,18 @@ async function initDB() {
         support_url VARCHAR(255) DEFAULT 'https://t.me/Sheldonph',
         game_status VARCHAR(50) DEFAULT 'ONLINE',
         supported_version_text VARCHAR(255) DEFAULT '8 Ball Pool v55.8.0+',
+        target_pool_version VARCHAR(50) DEFAULT '55.6.0',
         ready_status_text VARCHAR(255) DEFAULT 'Mod Ready',
         global_kill_switch TINYINT(1) DEFAULT 0,
         kill_switch_message VARCHAR(500) DEFAULT 'Server is currently undergoing scheduled maintenance. Please try again shortly.',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB;
     `);
+
+    // Safe migration: Add target_pool_version to app_settings if not exists
+    try {
+      await conn.query(`ALTER TABLE app_settings ADD COLUMN target_pool_version VARCHAR(50) DEFAULT '55.6.0'`);
+    } catch (ignoreCol) {}
 
     // 5. Seed default App Settings (Row 1)
     const [settingsRows] = await conn.query('SELECT id FROM app_settings WHERE id = 1');
