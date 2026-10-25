@@ -102,8 +102,8 @@ async function getAppSettings() {
     telegram_url: 'https://t.me/Sheldonph',
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
-    supported_version_text: '8 Ball Pool v56.29.1',
-    target_pool_version: 'v56.29.1',
+    supported_version_text: 'All Versions Supported',
+    target_pool_version: 'All',
     ready_status_text: 'Mod Ready',
     global_kill_switch: 0,
     kill_switch_message: 'Server is undergoing maintenance. Please try again shortly.'
@@ -267,8 +267,8 @@ app.post('/api/v1/auth/login', async (req, res) => {
         telegram_url: settings.telegram_url || 'https://t.me/Sheldonph',
         support_url: settings.support_url || 'https://t.me/Sheldonph',
         game_status: settings.game_status || 'ONLINE',
-        supported_version_text: settings.supported_version_text || '8 Ball Pool v56.29.1',
-        target_pool_version: settings.target_pool_version || 'v56.29.1',
+        supported_version_text: settings.supported_version_text || 'All Versions Supported',
+        target_pool_version: settings.target_pool_version || 'All',
         ready_status_text: settings.ready_status_text || 'Mod Ready'
       }
     });
@@ -332,8 +332,8 @@ app.get('/api/v1/app/bootstrap', async (req, res) => {
       telegram_url: settings.telegram_url || 'https://t.me/Sheldonph',
       support_url: settings.support_url || 'https://t.me/Sheldonph',
       game_status: settings.game_status || 'ONLINE',
-      supported_version_text: settings.supported_version_text || '8 Ball Pool v56.29.1',
-      target_pool_version: settings.target_pool_version || 'v56.29.1',
+      supported_version_text: settings.supported_version_text || 'All Versions Supported',
+      target_pool_version: settings.target_pool_version || 'All',
       ready_status_text: settings.ready_status_text || 'Mod Ready',
       global_kill_switch: Boolean(settings.global_kill_switch),
       kill_switch_message: settings.kill_switch_message || '',
@@ -537,7 +537,7 @@ const handleClientValidate = async (req, res) => {
         expires_at: expiresAt ? expiresAt.toISOString() : '',
         subscription_tier: userTier,
         max_profiles: maxProfiles,
-        target_pool_version: settings.target_pool_version || 'v56.29.1'
+        target_pool_version: settings.target_pool_version || 'All'
       }]);
     }
 
@@ -549,7 +549,7 @@ const handleClientValidate = async (req, res) => {
       "remaining-time": expSeconds,
       expires_at_timestamp: expSeconds,
       days_left: remaining.days,
-      target_pool_version: settings.target_pool_version || 'v56.29.1',
+      target_pool_version: settings.target_pool_version || 'All',
       user: {
         username: user.username,
         expires_at: expiresAt ? expiresAt.toISOString() : null,
@@ -638,7 +638,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
         "version-app": serverVer,
         "URL Update": updateUrl
       },
-      "target_pool_version": settings.target_pool_version || "v56.29.1",
+      "target_pool_version": settings.target_pool_version || "All",
       "subscription_tier": userTier,
       "max_profiles": maxProfiles,
       "remaining-time": expSeconds,
@@ -652,7 +652,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
         "version-app": "1.0",
         "URL Update": ""
       },
-      "target_pool_version": "v56.29.1",
+      "target_pool_version": "All",
       "subscription_tier": "VIP",
       "max_profiles": 5,
       "remaining-time": 0,
