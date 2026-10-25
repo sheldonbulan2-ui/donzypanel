@@ -614,8 +614,8 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     // App Version Response (ooO0oo0o.smali: app-1 -> version-app, URL Update)
     const clientAppVersion = req.body['app-version'] || req.query['app-version'] || '';
     const forceUpdate = Boolean(settings.force_update);
-    const serverVer = forceUpdate ? (settings.app_version || '1.3') : (clientAppVersion || settings.app_version || '1.3');
-    const updateUrl = forceUpdate ? (settings.apk_url || 'https://donzypanel.onrender.com/donzy3.apk') : '';
+    const serverVer = forceUpdate ? (settings.app_version || '1.0') : (clientAppVersion || settings.app_version || '1.0');
+    const updateUrl = forceUpdate ? (settings.apk_url || 'https://donzypanel.onrender.com/Donzy_v1.0.apk') : '';
     const userTier = (user && user.subscription_tier === 'Standard') ? 'Standard' : 'VIP';
     const maxProfiles = userTier === 'Standard' ? 2 : 5;
     const expSeconds = (user && user.expires_at) ? Math.floor(new Date(user.expires_at).getTime() / 1000) : 0;
@@ -638,7 +638,7 @@ app.all(['/upload/check-version.php', '/check-version.php'], async (req, res) =>
     return res.json({
       "check-user": "success",
       "app-1": {
-        "version-app": "1.3",
+        "version-app": "1.0",
         "URL Update": ""
       },
       "target_pool_version": "v56.29.1",
