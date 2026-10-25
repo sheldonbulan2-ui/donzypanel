@@ -14,6 +14,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_donzy_2026';
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Explicit Direct APK Download Routes (ensures application/vnd.android.package-archive)
+app.get(['/aica.apk', '/donzy3.apk', '/donzy2.apk', '/Donzy1.apk', '/Donzy_v1.0.apk'], (req, res) => {
+  const filename = path.basename(req.path);
+  const apkPath = path.join(__dirname, 'public', filename);
+  if (fs.existsSync(apkPath)) {
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    return res.sendFile(apkPath);
+  }
+  return res.status(404).send('APK file not found');
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize database schema and seeds
@@ -85,9 +96,9 @@ async function getAppSettings() {
     console.error('[SETTINGS] Fetch error:', err.message);
   }
   return {
-    app_version: '1.2',
+    app_version: '1.3',
     force_update: 0,
-    apk_url: 'https://donzypanel.onrender.com/donzy2.apk',
+    apk_url: 'https://donzypanel.onrender.com/aica.apk',
     telegram_url: 'https://t.me/Sheldonph',
     support_url: 'https://t.me/Sheldonph',
     game_status: 'ONLINE',
